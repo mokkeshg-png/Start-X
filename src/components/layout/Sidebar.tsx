@@ -69,15 +69,15 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-[#081220] border-r border-slate-800 flex flex-col shrink-0 transition-colors text-white">
+    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 transition-colors text-slate-800">
       {/* Role Banner Header */}
-      <div className="p-4 border-b border-slate-800/80 bg-[#060e18]">
-        <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
-          <ShieldCheck className="w-4 h-4 text-blue-300" />
+      <div className="p-4 border-b border-slate-200 bg-slate-50/60">
+        <div className="flex items-center gap-2 text-xs font-bold text-[#0B1E36] tracking-wider uppercase">
+          <ShieldCheck className="w-4 h-4 text-[#0B1E36]" />
           <span>{getRoleHeaderLabel()}</span>
         </div>
-        <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
-          Authority: <span className="font-semibold text-blue-300">{currentUser.role}</span>
+        <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
+          Authority: <span className="font-semibold text-[#0B1E36]">{currentUser.role}</span>
         </p>
       </div>
 
@@ -90,10 +90,10 @@ export const Sidebar: React.FC = () => {
               key={item.path + item.label}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded font-medium transition-all ${
+                `flex items-center gap-3 px-3 py-2 rounded transition-all ${
                   isActive
-                    ? 'bg-[#132c4e] text-white shadow-2xs font-semibold border-l-2 border-blue-400'
-                    : 'text-slate-300 hover:bg-[#11233d] hover:text-white'
+                    ? 'bg-slate-100 text-[#0B1E36] font-bold border-l-4 border-[#0B1E36] shadow-2xs'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-[#0B1E36] font-medium'
                 }`
               }
             >
@@ -104,15 +104,15 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Bottom Identity Card */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/40 text-[11px] text-slate-400">
+      {/* Bottom Identity Section */}
+      <div className="p-4 border-t border-slate-200 bg-slate-50/40 text-[11px] text-slate-500">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-slate-300">Access Control</span>
-          <span className="font-mono text-[9px] text-emerald-400 font-bold bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800/40">
+          <span className="font-semibold text-slate-700">Access Control</span>
+          <span className="font-mono text-[9px] text-emerald-800 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
             ENFORCED
           </span>
         </div>
-        <p className="text-[10px] text-slate-500 mt-0.5">Institutional Portal v3.0</p>
+        <p className="text-[10px] text-slate-400 mt-0.5">Institutional Platform v3.0</p>
       </div>
     </aside>
   );
