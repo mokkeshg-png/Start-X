@@ -15,8 +15,8 @@ public class BulkAuthorizedEmailRequest {
     private List<String> emails;
 
     @NotBlank(message = "Role is required")
-    @Pattern(regexp = "^(STUDENT|TEACHER|ADMIN)$",
-             message = "Role must be STUDENT, TEACHER, or ADMIN")
+    @Pattern(regexp = "^(STUDENT|TEACHER|FACULTY|ADMIN)$",
+             message = "Role must be STUDENT, TEACHER, FACULTY, or ADMIN")
     private String role;
 
     public BulkAuthorizedEmailRequest() {}

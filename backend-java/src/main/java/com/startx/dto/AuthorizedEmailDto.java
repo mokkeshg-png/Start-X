@@ -23,8 +23,8 @@ public class AuthorizedEmailDto {
      * Mapped to the DB enum: student | staff | admin before persistence.
      */
     @NotBlank(message = "Role is required")
-    @Pattern(regexp = "^(STUDENT|TEACHER|ADMIN)$",
-             message = "Role must be STUDENT, TEACHER, or ADMIN")
+    @Pattern(regexp = "^(STUDENT|TEACHER|FACULTY|ADMIN)$",
+             message = "Role must be STUDENT, TEACHER, FACULTY, or ADMIN")
     private String role;
 
     /** pending | registered | active | revoked */

@@ -110,6 +110,64 @@ public class SupabaseAdminClient {
         }
     }
 
+    /**
+     * Create a user with a default password.
+     */
+    public String createUser(String email, String role) {
+        String url = supabaseUrl + "/auth/v1/admin/users";
+
+        HttpHeaders headers = buildAdminHeaders();
+        Map<String, Object> body = Map.of(
+                "email", email,
+                "password", "Welcome@123",
+                "email_confirm", true,
+                "app_metadata", Map.of("role", role)
+        );
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Object id = response.getBody().get("id");
+                if (id == null) throw new RuntimeException("Supabase create user response missing 'id'");
+                return id.toString();
+            }
+        } catch (HttpClientErrorException e) {
+            String body2 = e.getResponseBodyAsString();
+            log.error("Supabase create user failed for {}: {}", email, body2);
+            // If it's already registered, we might want to just fetch or ignore.
+            // For now, throw and let the caller handle it.
+            throw new RuntimeException("Failed to create user: " + body2);
+        } catch (Exception e) {
+            log.error("Supabase create user error for {}: {}", email, e.getMessage());
+            throw new RuntimeException("Failed to create user");
+        }
+        throw new RuntimeException("Failed to create user — no ID returned");
+    }
+
+    public String getUserIdByEmail(String email) {
+        String url = supabaseUrl + "/auth/v1/admin/users";
+        HttpHeaders headers = buildAdminHeaders();
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        try {
+            // Wait, this returns an array of users? No, GoTrue GET /admin/users returns a pagination object like:
+            // { "users": [...] }
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
+            if (response.getBody() != null && response.getBody().containsKey("users")) {
+                java.util.List<Map<String, Object>> users = (java.util.List<Map<String, Object>>) response.getBody().get("users");
+                for (Map<String, Object> user : users) {
+                    if (email.equalsIgnoreCase((String) user.get("email"))) {
+                        return user.get("id").toString();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to list users to find email {}", email, e);
+        }
+        return null;
+    }
+
     // -------------------------------------------------------------------------
     // Helper
     // -------------------------------------------------------------------------
