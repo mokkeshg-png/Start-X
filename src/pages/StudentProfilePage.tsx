@@ -22,6 +22,7 @@ import { Badge } from '../components/common/Badge';
 import { AIInsightsPanel } from '../components/AIInsightsPanel';
 import { apiService } from '../services/apiService';
 import { StudentProfile } from '../types';
+import { supabase } from '../lib/supabase';
 
 export const StudentProfilePage: React.FC = () => {
   const { currentUser, updateUserProfile, showToast } = useApp();
@@ -42,6 +43,7 @@ export const StudentProfilePage: React.FC = () => {
 
   // Extended student profile
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
+  const [supabaseStudentId, setSupabaseStudentId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     setName(currentUser.name);
@@ -56,6 +58,16 @@ export const StudentProfilePage: React.FC = () => {
       apiService.getStudentProfile(currentUser.id).then((p) => {
         if (p) setStudentProfile(p);
       });
+
+      // Resolve the students.student_id (UUID) for AI analysis
+      supabase
+        .from('students')
+        .select('student_id')
+        .eq('user_id', currentUser.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.student_id) setSupabaseStudentId(data.student_id);
+        });
     }
   }, [currentUser]);
 
@@ -313,11 +325,14 @@ export const StudentProfilePage: React.FC = () => {
       </Card>
 
       {/* AI INSIGHTS */}
-      <AIInsightsPanel 
-        title="Student Profile & Skill Analysis"
-        analysisType="skill_analysis"
-        studentId={currentUser.id}
-      />
+      {currentUser.role === 'STUDENT' && (
+        <AIInsightsPanel
+          title="Student Profile & Skill Analysis"
+          analysisType="skill_analysis"
+          studentId={supabaseStudentId ?? currentUser.id}
+          manualOnly={true}
+        />
+      )}
     </div>
   );
 };

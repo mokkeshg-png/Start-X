@@ -35,6 +35,10 @@ import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
 import { Spinner } from '../components/common/Spinner';
 import { AIInsightsPanel } from '../components/AIInsightsPanel';
+import { ProjectAIInsightsDashboard } from '../components/ai/ProjectAIInsightsDashboard';
+import { DiscussionAnalysisPanel } from '../components/ai/DiscussionAnalysisPanel';
+import { DocumentAnalysisPanel } from '../components/ai/DocumentAnalysisPanel';
+import { ContributionAnalysisPanel } from '../components/ai/ContributionAnalysisPanel';
 import { apiService } from '../services/apiService';
 import { clientStorage } from '../storage/clientStorage';
 import { Project, ProjectDocument, StudentContribution, Message, User } from '../types';
@@ -346,30 +350,11 @@ export const TeamDetailPage: React.FC = () => {
 
       {/* TAB: AI INSIGHTS */}
       {activeTab === 'ai_insights' && (
-        <div className="space-y-6">
-          <AIInsightsPanel 
-            title="Collective Project Insight"
-            analysisType="collective_insight"
-            teamId={project.id}
-          />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <AIInsightsPanel 
-              title="Progress Analysis"
-              analysisType="progress_analysis"
-              teamId={project.id}
-            />
-            <AIInsightsPanel 
-              title="Collaboration Gaps"
-              analysisType="collaboration_gap"
-              teamId={project.id}
-            />
-          </div>
-          <AIInsightsPanel 
-            title="Team Recommendations"
-            analysisType="collaboration_recommendation"
-            teamId={project.id}
-          />
-        </div>
+        <ProjectAIInsightsDashboard
+          teamId={project.id}
+          studentId={currentUser.role !== 'TEACHER' ? currentUser.id : undefined}
+          isStaff={isTeacherOwner}
+        />
       )}
 
       {/* TAB 1: OVERVIEW */}
@@ -707,10 +692,19 @@ export const TeamDetailPage: React.FC = () => {
               })}
             </div>
           )}
+
+          {/* AI Contribution Analysis — shown when user is a team member */}
+          {isAssignedMember && (
+            <div className="mt-4 pt-4 border-t border-slate-800">
+              <ContributionAnalysisPanel
+                teamId={project.id}
+                studentId={currentUser.id}
+                studentName={currentUser.name}
+              />
+            </div>
+          )}
         </Card>
       )}
-
-      {/* TAB 4: DOCUMENTS & PRD */}
       {activeTab === 'documents' && (
         <Card className="p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -786,10 +780,24 @@ export const TeamDetailPage: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* AI Document Analysis — one panel per uploaded document */}
+          {documents.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-800 space-y-3">
+              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                AI Document Intelligence
+              </h3>
+              {documents.map((d) => (
+                <DocumentAnalysisPanel
+                  key={d.id}
+                  documentId={d.id}
+                  documentName={d.name}
+                />
+              ))}
+            </div>
+          )}
         </Card>
       )}
-
-      {/* TAB 5: TEAM CHAT & TAB 6: MENTOR DISCUSSION */}
       {(activeTab === 'chat' || activeTab === 'mentor') && (
         <Card className="p-6 space-y-4">
           <div className="pb-3 border-b border-slate-800">
@@ -856,6 +864,15 @@ export const TeamDetailPage: React.FC = () => {
             </Button>
           </form>
         </Card>
+      )}
+
+      {/* AI Discussion Analysis — shown below the chat panel */}
+      {activeTab === 'chat' && messages.length > 0 && (
+        <DiscussionAnalysisPanel
+          discussionId={project.id}
+          discussionTitle={`${project.name} — Team Chat`}
+          teamId={project.id}
+        />
       )}
 
       {/* Contribution Upload Modal */}
