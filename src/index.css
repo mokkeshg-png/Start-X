@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    
+    --brand-navy: #0f172a;
+    --brand-blue: #1e40af;
+    --brand-accent: #6366f1;
+    --ai-purple: #7c3aed;
+    --ai-cyan: #06b6d4;
+  }
+
+  .dark {
+    --bg-main: #0b0f19;
+    --bg-card: #111827;
+    --border-color: #1f2937;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+
+    --brand-navy: #1e293b;
+    --brand-blue: #3b82f6;
+    --brand-accent: #818cf8;
+    --ai-purple: #a78bfa;
+    --ai-cyan: #22d3ee;
+  }
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* AI Glow Effects */
+.ai-glow-border {
+  box-shadow: 0 0 15px -3px rgba(124, 58, 237, 0.25), inset 0 0 15px -3px rgba(6, 182, 212, 0.15);
+}
+
+.ai-gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .ai-gradient-text {
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.animate-scanline {
+  animation: scanline 4s linear infinite;
+}
+
+/* Professional Academic Theme Overrides */
+@theme {
+  /* Redefine slate to a deep academic navy scale */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #1a2f4c;
+  --color-slate-800: #0f203b;
+  --color-slate-900: #0a162b;
+  --color-slate-950: #050a14;
+  
+  /* Redefine indigo to an academic royal blue scale */
+  --color-indigo-400: #60a5fa;
+  --color-indigo-500: #3b82f6;
+  --color-indigo-600: #1d4ed8;
+  --color-indigo-700: #1e3a8a;
+}
+
+:root {
+  /* Light Mode Academic Theme */
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #0a162b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  
+  --brand-navy: #0a162b;
+  --brand-blue: #1d4ed8;
+  --brand-accent: #2563eb;
+  --ai-purple: #7c3aed;
+  --ai-cyan: #06b6d4;
+}
+
+.dark {
+  /* Dark Mode Academic Theme */
+  --bg-main: #050a14; /* Deep Navy Surface */
+  --bg-card: #0a162b; /* Slightly lighter navy for cards */
+  --border-color: #1a2f4c; /* Subtle navy border */
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --brand-navy: #1a2f4c;
+  --brand-blue: #3b82f6;
+  --brand-accent: #60a5fa;
+  --ai-purple: #a78bfa;
+  --ai-cyan: #22d3ee;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+/* Subtle depth and shadows for professional UI */
+.shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl {
+  box-shadow: 0 4px 20px -2px rgba(5, 10, 20, 0.08), 0 0 3px rgba(5, 10, 20, 0.04) !important;
+}
+.dark .shadow-sm, .dark .shadow, .dark .shadow-md, .dark .shadow-lg, .dark .shadow-xl {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 0 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Clean Form Elements */
+input, select, textarea {
+  transition: all 0.2s ease-in-out;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--brand-blue) !important;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15) !important;
+}
+.dark input:focus, .dark select:focus, .dark textarea:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
