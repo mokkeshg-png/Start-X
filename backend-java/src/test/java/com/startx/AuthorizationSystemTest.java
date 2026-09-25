@@ -3,7 +3,6 @@ package com.startx;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.startx.entity.AuthorizedEmail;
 import com.startx.repository.AuthorizedEmailRepository;
-import com.startx.repository.UserRepository;
 import com.startx.service.AuthorizedEmailService;
 import com.startx.service.SupabaseAdminClient;
 import org.junit.jupiter.api.*;
@@ -17,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+@SuppressWarnings("null")
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:authtest;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
         "spring.datasource.driverClassName=org.h2.Driver",
@@ -84,8 +83,6 @@ public class AuthorizationSystemTest {
     @Autowired
     private AuthorizedEmailRepository authorizedEmailRepository;
 
-    @Autowired
-    private UserRepository userRepository;
 
     // =========================================================================
     // 1. Unauthenticated request to admin API returns 401

@@ -2,7 +2,6 @@ package com.startx.service;
 
 import com.startx.dto.AuthorizedEmailDto;
 import com.startx.entity.AuthorizedEmail;
-import com.startx.entity.User;
 import com.startx.repository.AuthorizedEmailRepository;
 import com.startx.repository.UserRepository;
 import org.slf4j.Logger;
@@ -30,6 +29,7 @@ import java.util.regex.Pattern;
  * so all reads/writes succeed regardless of the RLS admin-only policies.</p>
  */
 @Service
+@SuppressWarnings("null")
 public class AuthorizedEmailService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthorizedEmailService.class);

@@ -32,7 +32,7 @@ public class SupabaseJwtAuthConverter implements Converter<Jwt, AbstractAuthenti
     private static final Logger log = LoggerFactory.getLogger(SupabaseJwtAuthConverter.class);
 
     @Override
-    public AbstractAuthenticationToken convert(Jwt jwt) {
+    public AbstractAuthenticationToken convert(@org.springframework.lang.NonNull Jwt jwt) {
         String userId = jwt.getSubject();   // Supabase user UUID
         String role   = extractRole(jwt);   // Application-level role
 

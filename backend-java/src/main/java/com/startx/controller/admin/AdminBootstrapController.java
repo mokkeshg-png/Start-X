@@ -1,7 +1,6 @@
 package com.startx.controller.admin;
 
 import com.startx.dto.ApiResponse;
-import com.startx.dto.AuthorizedEmailDto;
 import com.startx.service.AuthorizedEmailService;
 import com.startx.service.SupabaseAdminClient;
 import com.startx.service.UserService;
@@ -108,7 +107,7 @@ public class AdminBootstrapController {
         try {
             // 1. Upsert authorized_emails entry for this admin
             if (!authorizedEmailService.findActiveAuthorization(email).isPresent()) {
-                AuthorizedEmailDto ae = authorizedEmailService.bootstrapAdmin(email);
+                authorizedEmailService.bootstrapAdmin(email);
                 log.info("Bootstrap: added authorized_emails entry for admin {}", email);
             }
 

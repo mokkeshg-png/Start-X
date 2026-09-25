@@ -3,8 +3,6 @@ package com.startx.controller.admin;
 import com.startx.dto.ApiResponse;
 import com.startx.dto.UserDto;
 import com.startx.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,12 +24,8 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
-    private static final Logger log = LoggerFactory.getLogger(AdminController.class);
-
-    private final UserService userService;
-
     public AdminController(UserService userService) {
-        this.userService = userService;
+        // userService not actively used right now, retained for structure
     }
 
     /**
