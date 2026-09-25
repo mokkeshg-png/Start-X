@@ -23,9 +23,9 @@ export const LandingPage: React.FC = () => {
         <img
           src="/agni-building.jpg"
           alt="AGNI COLLEGE OF TECHNOLOGY Building"
-          className="w-full h-full object-cover object-center opacity-40 fixed inset-0"
+          className="w-full h-full object-cover object-top opacity-60 fixed inset-0"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/85 to-slate-950/95 fixed"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-slate-950/80 to-slate-950/95 fixed"></div>
       </div>
 
       {/* Official Header */}
