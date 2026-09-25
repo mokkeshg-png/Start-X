@@ -1,5 +1,6 @@
 import { User, UserRole } from '../types';
 import { clientStorage } from '../storage/clientStorage';
+import { supabase } from '../lib/supabase';
 
 export interface LoginCredentials {
   email: string;
@@ -27,15 +28,6 @@ export interface AuthResponse {
 const TOKEN_KEY = 'startx_auth_token';
 
 class AuthService {
-  private getBaseUrl(): string {
-    const envUrl = (import.meta as any).env?.VITE_API_BASE_URL || (import.meta as any).env?.VITE_API_URL;
-    if (envUrl) {
-      return envUrl.replace(/\/$/, '');
-    }
-    // Default fallback to standard API path
-    return '/api';
-  }
-
   getToken(): string | null {
     try {
       return localStorage.getItem(TOKEN_KEY);
@@ -67,190 +59,132 @@ class AuthService {
     return headers;
   }
 
-  /**
-   * Real backend user authentication
-   */
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const baseUrl = this.getBaseUrl();
-    const cleanEmail = credentials.email.trim().toLowerCase();
-    const password = credentials.password || '';
-
-    try {
-      const response = await fetch(`${baseUrl}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: cleanEmail,
-          password
-        })
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const errorMsg =
-          data?.message ||
-          data?.error ||
-          (response.status === 401
-            ? 'Invalid credentials. Please check your email and password.'
-            : response.status === 403
-            ? 'Your account is unauthorized. Please contact your college administrator.'
-            : response.status === 404
-            ? 'Account not found. Please register or verify with college admin.'
-            : `Authentication failed (${response.status})`);
-        throw new Error(errorMsg);
-      }
-
-      // Format response according to backend contract
-      const user: User = data?.user || data?.data?.user || data?.data || data;
-      const token: string | undefined = data?.token || data?.data?.token || data?.accessToken;
-
-      if (!user || !user.id || !user.role) {
-        throw new Error('Malformed authentication response from server.');
-      }
-
-      if (token) {
-        this.setToken(token);
-      }
-      clientStorage.saveCurrentUser(user);
-
-      return {
-        user,
-        token,
-        message: data?.message
-      };
-    } catch (err: any) {
-      // If network failure / connection refused
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        throw new Error('Unable to connect to the authentication server. Please ensure the backend is running.');
-      }
-      throw err;
-    }
+  private mapSupabaseUser(sbUser: any): User {
+    const meta = sbUser.user_metadata || {};
+    const appMeta = sbUser.app_metadata || {};
+    return {
+      id: sbUser.id,
+      email: sbUser.email,
+      name: meta.name || sbUser.email.split('@')[0],
+      role: (appMeta.role || meta.role || 'STUDENT').toUpperCase() as UserRole,
+      department: meta.department || '',
+      year: meta.year || '',
+      bio: meta.bio || '',
+      avatar: meta.avatar || '',
+      skills: meta.skills || [],
+      github: meta.github,
+      linkedin: meta.linkedin,
+      createdAt: sbUser.created_at || new Date().toISOString()
+    };
   }
 
   /**
-   * Real backend user registration
+   * Supabase user authentication
+   */
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    const cleanEmail = credentials.email.trim().toLowerCase();
+    const password = credentials.password || '';
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data.user || !data.session) {
+      throw new Error('Malformed authentication response from server.');
+    }
+
+    const token = data.session.access_token;
+    const user = this.mapSupabaseUser(data.user);
+
+    this.setToken(token);
+    clientStorage.saveCurrentUser(user);
+
+    return {
+      user,
+      token,
+      message: 'Login successful'
+    };
+  }
+
+  /**
+   * Supabase user registration
    */
   async register(payload: RegisterPayload): Promise<AuthResponse> {
-    const baseUrl = this.getBaseUrl();
     const cleanEmail = payload.email.trim().toLowerCase();
+    const password = payload.password || '';
 
-    try {
-      const response = await fetch(`${baseUrl}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...payload,
-          email: cleanEmail
-        })
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const errorMsg =
-          data?.message ||
-          data?.error ||
-          (response.status === 409
-            ? 'An account with this email address already exists.'
-            : response.status === 403
-            ? 'This email is not approved by an administrator. Please contact your college admin.'
-            : `Registration failed (${response.status})`);
-        throw new Error(errorMsg);
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: {
+        data: {
+          name: payload.name,
+          department: payload.department,
+          year: payload.year,
+          bio: payload.bio,
+          skills: payload.skills,
+          github: payload.github,
+          linkedin: payload.linkedin,
+          role: 'STUDENT'
+        }
       }
+    });
 
-      const user: User = data?.user || data?.data?.user || data?.data || data;
-      const token: string | undefined = data?.token || data?.data?.token || data?.accessToken;
-
-      if (!user || !user.id || !user.role) {
-        throw new Error('Malformed registration response from server.');
-      }
-
-      if (token) {
-        this.setToken(token);
-      }
-      clientStorage.saveCurrentUser(user);
-
-      return {
-        user,
-        token,
-        message: data?.message
-      };
-    } catch (err: any) {
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        throw new Error('Unable to connect to the authentication server. Please ensure the backend is running.');
-      }
-      throw err;
+    if (error) {
+      throw new Error(error.message);
     }
+
+    if (!data.user) {
+      throw new Error('Registration failed.');
+    }
+
+    // Supabase returns session as null if email confirmation is required
+    const token = data.session?.access_token || undefined;
+    const user = this.mapSupabaseUser(data.user);
+
+    if (token) {
+      this.setToken(token);
+      clientStorage.saveCurrentUser(user);
+    }
+
+    return {
+      user,
+      token,
+      message: token ? 'Registration successful' : 'Please check your email to verify your account.'
+    };
   }
 
   /**
    * Session verification & current user profile retrieval
    */
   async getCurrentUser(): Promise<User | null> {
-    const token = this.getToken();
-    const savedUser = clientStorage.getCurrentUser();
+    const { data, error } = await supabase.auth.getSession();
 
-    if (!token && !savedUser) {
+    if (error || !data.session) {
+      this.setToken(null);
+      clientStorage.saveCurrentUser(null);
       return null;
     }
 
-    const baseUrl = this.getBaseUrl();
+    const token = data.session.access_token;
+    const user = this.mapSupabaseUser(data.session.user);
 
-    try {
-      const response = await fetch(`${baseUrl}/auth/me`, {
-        method: 'GET',
-        headers: this.getAuthHeaders()
-      });
+    this.setToken(token);
+    clientStorage.saveCurrentUser(user);
 
-      if (response.status === 401 || response.status === 403) {
-        // Session expired or invalid
-        this.setToken(null);
-        clientStorage.saveCurrentUser(null);
-        return null;
-      }
-
-      if (response.ok) {
-        const data = await response.json().catch(() => null);
-        const user: User = data?.user || data?.data?.user || data?.data || data;
-        if (user && user.id && user.role) {
-          clientStorage.saveCurrentUser(user);
-          return user;
-        }
-      }
-
-      // If /auth/me isn't returning 200 or isn't reached, retain valid saved session if present
-      return savedUser || null;
-    } catch {
-      // Network hiccup — retain local cached profile if user is already logged in
-      return savedUser || null;
-    }
+    return user;
   }
 
   /**
-   * Real backend user logout
+   * Supabase user logout
    */
   async logout(): Promise<void> {
-    const baseUrl = this.getBaseUrl();
-    const token = this.getToken();
-
-    if (token) {
-      try {
-        await fetch(`${baseUrl}/auth/logout`, {
-          method: 'POST',
-          headers: this.getAuthHeaders()
-        }).catch(() => {
-          // Ignore network errors during logout
-        });
-      } catch {
-        // Ignore network errors
-      }
-    }
-
+    await supabase.auth.signOut();
     this.setToken(null);
     clientStorage.saveCurrentUser(null);
   }
