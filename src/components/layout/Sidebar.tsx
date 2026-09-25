@@ -23,7 +23,8 @@ import {
   Building2,
   Mail,
   FolderGit2,
-  Plus
+  Plus,
+  HelpCircle
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -68,15 +69,15 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 transition-colors text-white">
+    <aside className="w-64 bg-[#081220] border-r border-slate-800 flex flex-col shrink-0 transition-colors text-white">
       {/* Role Banner Header */}
-      <div className="p-4 border-b border-slate-800 bg-slate-950/60">
-        <div className="flex items-center gap-2 text-xs font-bold text-white">
-          <ShieldCheck className="w-4 h-4 text-indigo-400" />
+      <div className="p-4 border-b border-slate-800/80 bg-[#060e18]">
+        <div className="flex items-center gap-2 text-xs font-bold text-white tracking-wide">
+          <ShieldCheck className="w-4 h-4 text-blue-300" />
           <span>{getRoleHeaderLabel()}</span>
         </div>
-        <p className="text-[10px] text-slate-400 mt-0.5">
-          Role: <span className="font-semibold text-indigo-400">{currentUser.role}</span>
+        <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
+          Authority: <span className="font-semibold text-blue-300">{currentUser.role}</span>
         </p>
       </div>
 
@@ -89,10 +90,10 @@ export const Sidebar: React.FC = () => {
               key={item.path + item.label}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all ${
+                `flex items-center gap-3 px-3 py-2 rounded font-medium transition-all ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-xs font-semibold'
-                    : 'text-slate-400 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-[#132c4e] text-white shadow-2xs font-semibold border-l-2 border-blue-400'
+                    : 'text-slate-300 hover:bg-[#11233d] hover:text-white'
                 }`
               }
             >
@@ -104,14 +105,14 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Identity Card */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/60 text-[11px] text-slate-400">
+      <div className="p-4 border-t border-slate-800 bg-slate-950/40 text-[11px] text-slate-400">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-slate-300">RBAC Telemetry v3.0</span>
+          <span className="font-semibold text-slate-300">Access Control</span>
           <span className="font-mono text-[9px] text-emerald-400 font-bold bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800/40">
-            RBAC ACTIVE
+            ENFORCED
           </span>
         </div>
-        <p className="text-[10px] text-slate-500 mt-1">Strict Default-Deny Security</p>
+        <p className="text-[10px] text-slate-500 mt-0.5">Institutional Portal v3.0</p>
       </div>
     </aside>
   );
