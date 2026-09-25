@@ -119,14 +119,16 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
   if (currentUser.role === 'ADMIN') {
     return (
       <div className="space-y-6 animate-in fade-in duration-200">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-sm text-white">
+        {/* Header Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 sm:p-7 rounded border border-slate-200 shadow-2xs text-slate-900">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-white">Institutional Administration Portal</h1>
+              <h1 className="font-serif-academic text-xl sm:text-2xl font-bold text-[#0B1E36] tracking-tight">
+                Institutional Administration Portal
+              </h1>
               <Badge variant="purple">Admin Authority</Badge>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Manage authorized faculty and student emails. Users can only register if pre-approved here.
             </p>
           </div>
@@ -178,25 +180,25 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
 
         {/* Main Email Authority Table */}
         <Card className="p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
             {/* Tabs for Teacher vs Student */}
-            <div className="flex items-center gap-2 p-1 bg-slate-950 border border-slate-800 rounded-xl w-fit">
+            <div className="flex items-center gap-2 p-1 bg-slate-100 border border-slate-200 rounded w-fit">
               <button
                 onClick={() => setActiveAdminTab('TEACHER')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-4 py-1.5 rounded text-xs font-semibold transition-all cursor-pointer ${
                   activeAdminTab === 'TEACHER'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#0B1E36] text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Teacher Emails ({authorizedEmails.filter((e) => e.role === 'TEACHER').length})
               </button>
               <button
                 onClick={() => setActiveAdminTab('STUDENT')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-4 py-1.5 rounded text-xs font-semibold transition-all cursor-pointer ${
                   activeAdminTab === 'STUDENT'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#0B1E36] text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Student Emails ({authorizedEmails.filter((e) => e.role === 'STUDENT').length})
@@ -211,7 +213,7 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Search authorized emails..."
-                className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B1E36]"
               />
             </div>
           </div>
@@ -219,7 +221,7 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
           {filteredEmails.length === 0 ? (
             <div className="py-12 text-center">
               <EmptyState
-                icon={<Mail className="w-12 h-12 text-slate-500" />}
+                icon={<Mail className="w-12 h-12 text-slate-400" />}
                 title={`No authorized ${activeAdminTab.toLowerCase()} emails`}
                 description={`Click 'Authorize New Email' or 'Bulk Add Emails' to allow ${activeAdminTab.toLowerCase()} registrations.`}
                 action={
@@ -234,10 +236,10 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
               />
             </div>
           ) : (
-            <div className="overflow-x-auto mt-4">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead>
-                  <tr className="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <div className="overflow-x-auto mt-4 border border-slate-200 rounded">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr className="text-[11px] font-bold text-[#0B1E36] uppercase tracking-wider">
                     <th className="py-3 px-4">Authorized Email</th>
                     <th className="py-3 px-4">Role</th>
                     <th className="py-3 px-4">Added Date</th>
@@ -245,10 +247,10 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {filteredEmails.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="py-3 px-4 font-mono font-medium text-white flex items-center gap-2">
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-4 font-mono font-medium text-slate-900 flex items-center gap-2">
                         <Mail className="w-3.5 h-3.5 text-slate-400" />
                         {item.email}
                       </td>
@@ -257,20 +259,20 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
                           {item.role}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 text-slate-400">
+                      <td className="py-3 px-4 text-slate-500">
                         {new Date(item.addedAt).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-4">
                         {item.status === 'ACTIVE' ? (
-                          <span className="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
+                          <span className="inline-flex items-center gap-1.5 text-emerald-700 font-medium">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Registered & Active
                           </span>
                         ) : item.status === 'REGISTERED' ? (
-                          <span className="inline-flex items-center gap-1.5 text-cyan-400 font-medium">
+                          <span className="inline-flex items-center gap-1.5 text-blue-700 font-medium">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Registered
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 text-amber-400 font-medium">
+                          <span className="inline-flex items-center gap-1.5 text-amber-700 font-medium">
                             <Clock className="w-3.5 h-3.5" /> Awaiting Registration
                           </span>
                         )}
@@ -278,7 +280,7 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
                       <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => removeAuthorizedEmail(item.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
                           title="Revoke Authorization"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -369,14 +371,16 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
   if (currentUser.role === 'TEACHER') {
     return (
       <div className="space-y-6 animate-in fade-in duration-200">
-        {/* Teacher Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-sm text-white">
+        {/* Teacher Header Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 sm:p-7 rounded border border-slate-200 shadow-2xs text-slate-900">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-white">Welcome, {currentUser.name}</h1>
+              <h1 className="font-serif-academic text-xl sm:text-2xl font-bold text-[#0B1E36] tracking-tight">
+                Welcome, {currentUser.name}
+              </h1>
               <Badge variant="purple">Faculty Coordinator</Badge>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Create and manage academic projects, upload PRD requirements, search students, and run AI team compatibility.
             </p>
           </div>
@@ -413,10 +417,10 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
 
         {/* Projects List Section */}
         <Card className="p-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-200">
             <div>
-              <h2 className="text-base font-bold text-white">Managed Projects</h2>
-              <p className="text-xs text-slate-400">All student project teams under your supervision</p>
+              <h2 className="font-serif-academic text-base font-bold text-[#0B1E36]">Managed Projects</h2>
+              <p className="text-xs text-slate-500">All student project teams under your supervision</p>
             </div>
             <Button
               variant="primary"
@@ -431,7 +435,7 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
           {projects.length === 0 ? (
             <div className="py-12">
               <EmptyState
-                icon={<FolderGit2 className="w-12 h-12 text-slate-500" />}
+                icon={<FolderGit2 className="w-12 h-12 text-slate-400" />}
                 title="No projects created yet"
                 description="Click 'CREATE PROJECT' to define requirements, upload PRDs, search students, and form your first team."
                 action={
@@ -452,40 +456,40 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
                 return (
                   <div
                     key={proj.id}
-                    className="p-5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-indigo-500/50 transition-all flex flex-col justify-between"
+                    className="p-5 rounded bg-white border border-slate-200 hover:border-slate-300 transition-all flex flex-col justify-between shadow-2xs"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div>
-                          <span className="font-mono text-[10px] text-indigo-400 font-bold block mb-0.5">
+                          <span className="font-mono text-[10px] text-blue-700 font-bold block mb-0.5">
                             {proj.id}
                           </span>
-                          <h3 className="text-sm font-bold text-white leading-snug">{proj.name}</h3>
+                          <h3 className="font-serif-academic text-sm font-bold text-[#0B1E36] leading-snug">{proj.name}</h3>
                         </div>
                         <Badge variant={proj.status === 'ACTIVE' ? 'success' : 'warning'}>
                           {proj.status}
                         </Badge>
                       </div>
 
-                      <p className="text-xs text-slate-400 line-clamp-2 mb-3">
+                      <p className="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed">
                         {proj.description || proj.problemStatement}
                       </p>
 
                       <div className="flex flex-wrap gap-1.5 mb-4">
-                        <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">
+                        <span className="px-2 py-0.5 rounded bg-slate-100 text-[10px] text-slate-700 border border-slate-200">
                           {proj.category}
                         </span>
-                        <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">
+                        <span className="px-2 py-0.5 rounded bg-slate-100 text-[10px] text-slate-700 border border-slate-200">
                           {proj.duration}
                         </span>
-                        <span className="px-2 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-800/50 text-[10px]">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-medium">
                           {totalMembers} Members Assigned
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-800/60 mt-2">
-                      <span className="text-[11px] text-slate-500">
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+                      <span className="text-[11px] text-slate-400">
                         Updated {new Date(proj.updatedAt).toLocaleDateString()}
                       </span>
                       <div className="flex items-center gap-2">
@@ -535,16 +539,18 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Student Welcome Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-sm text-white">
+      {/* Student Welcome Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 sm:p-7 rounded border border-slate-200 shadow-2xs text-slate-900">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-white">Hello, {currentUser.name}</h1>
+            <h1 className="font-serif-academic text-xl sm:text-2xl font-bold text-[#0B1E36] tracking-tight">
+              Hello, {currentUser.name}
+            </h1>
             <Badge variant="success">Verified Student</Badge>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             {currentUser.department} • {currentUser.year || '3rd Year'} • Student ID:{' '}
-            <span className="font-mono text-indigo-300 font-bold">{currentUser.studentId || 'STU-UNASSIGNED'}</span>
+            <span className="font-mono text-[#0B1E36] font-bold">{currentUser.studentId || 'STU-UNASSIGNED'}</span>
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -569,17 +575,17 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
 
       {/* Assigned Project Section */}
       <Card className="p-6">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
           <div>
-            <h2 className="text-base font-bold text-white">My Assigned Project</h2>
-            <p className="text-xs text-slate-400">Official academic project assigned by your faculty coordinator</p>
+            <h2 className="font-serif-academic text-base font-bold text-[#0B1E36]">My Assigned Project</h2>
+            <p className="text-xs text-slate-500">Official academic project assigned by your faculty coordinator</p>
           </div>
         </div>
 
         {!myAssignedProject ? (
           <div className="py-12">
             <EmptyState
-              icon={<FolderGit2 className="w-12 h-12 text-slate-500" />}
+              icon={<FolderGit2 className="w-12 h-12 text-slate-400" />}
               title="No Project Assigned Yet"
               description="Your faculty coordinator will assign you to an official project team once teams are formed. Keep your skills and profile up to date."
               action={
@@ -593,10 +599,10 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
             />
           </div>
         ) : (
-          <div className="mt-6 p-6 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col md:flex-row justify-between gap-6">
+          <div className="mt-6 p-6 rounded bg-white border border-slate-200 flex flex-col md:flex-row justify-between gap-6 shadow-2xs">
             <div className="space-y-3 max-w-xl">
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs text-indigo-400 font-bold bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
+                <span className="font-mono text-xs text-blue-800 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                   {myAssignedProject.id}
                 </span>
                 <Badge variant={myAssignedProject.status === 'ACTIVE' ? 'success' : 'warning'}>
@@ -604,31 +610,31 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
                 </Badge>
               </div>
 
-              <h3 className="text-lg font-bold text-white">{myAssignedProject.name}</h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <h3 className="font-serif-academic text-lg font-bold text-[#0B1E36]">{myAssignedProject.name}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
                 {myAssignedProject.description || myAssignedProject.problemStatement}
               </p>
 
               <div className="pt-2 flex flex-wrap gap-2">
-                <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-                  <span className="text-slate-400">My Assigned Role: </span>
-                  <span className="text-emerald-400 font-bold">{myAssignedRole}</span>
+                <div className="px-3 py-1.5 rounded bg-slate-50 border border-slate-200 text-xs">
+                  <span className="text-slate-500">My Assigned Role: </span>
+                  <span className="text-emerald-800 font-bold">{myAssignedRole}</span>
                 </div>
-                <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-                  <span className="text-slate-400">Category: </span>
-                  <span className="text-slate-200">{myAssignedProject.category}</span>
+                <div className="px-3 py-1.5 rounded bg-slate-50 border border-slate-200 text-xs">
+                  <span className="text-slate-500">Category: </span>
+                  <span className="text-slate-800">{myAssignedProject.category}</span>
                 </div>
-                <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-                  <span className="text-slate-400">Duration: </span>
-                  <span className="text-slate-200">{myAssignedProject.duration}</span>
+                <div className="px-3 py-1.5 rounded bg-slate-50 border border-slate-200 text-xs">
+                  <span className="text-slate-500">Duration: </span>
+                  <span className="text-slate-800">{myAssignedProject.duration}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col justify-between items-start md:items-end border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6">
-              <div className="text-xs text-slate-400">
+            <div className="flex flex-col justify-between items-start md:items-end border-t md:border-t-0 md:border-l border-slate-200 pt-4 md:pt-0 md:pl-6">
+              <div className="text-xs text-slate-500">
                 <span>Team Members: </span>
-                <span className="text-white font-bold">
+                <span className="text-slate-900 font-bold">
                   {(myAssignedProject.teamLeaderId ? 1 : 0) + myAssignedProject.memberIds.length} Students
                 </span>
               </div>
@@ -650,9 +656,9 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
 
       {/* Notifications preview for student */}
       <Card className="p-6">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-          <h2 className="text-sm font-bold text-white">Project Notifications</h2>
-          <Link to="/notifications" className="text-xs text-indigo-400 hover:underline">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+          <h2 className="font-serif-academic text-sm font-bold text-[#0B1E36]">Project Notifications</h2>
+          <Link to="/notifications" className="text-xs text-blue-700 hover:underline font-semibold">
             View All ({notifications.length})
           </Link>
         </div>
@@ -664,13 +670,13 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
             {notifications.slice(0, 3).map((n) => (
               <div
                 key={n.id}
-                className="p-3 rounded-lg bg-slate-950 border border-slate-800/80 flex items-start justify-between gap-3 text-xs"
+                className="p-3 rounded bg-white border border-slate-200 flex items-start justify-between gap-3 text-xs shadow-2xs"
               >
                 <div>
-                  <h4 className="font-semibold text-white">{n.title}</h4>
-                  <p className="text-slate-400 text-[11px] mt-0.5">{n.description}</p>
+                  <h4 className="font-semibold text-slate-900">{n.title}</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">{n.description}</p>
                 </div>
-                <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                <span className="text-[10px] text-slate-400 whitespace-nowrap">
                   {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>

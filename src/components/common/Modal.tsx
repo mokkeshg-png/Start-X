@@ -42,25 +42,25 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1E36]/40 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className={`w-full bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden ${sizeStyles[size]}`}
+        className={`w-full bg-white rounded shadow-2xl border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden ${sizeStyles[size]}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
           <div>
-            {title && <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>}
-            {description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>}
+            {title && <h3 className="font-serif-academic text-lg font-bold text-[#0B1E36]">{title}</h3>}
+            {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
           </div>
           <Button variant="ghost" size="sm" onClick={onClose} icon={<X className="w-4 h-4" />} />
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 bg-white text-slate-800">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200">
             {footer}
           </div>
         )}

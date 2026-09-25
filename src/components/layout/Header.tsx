@@ -3,7 +3,6 @@ import { useApp } from '../../context/AppContext';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
-  Sparkles,
   Bell,
   Sun,
   Moon,
@@ -11,10 +10,10 @@ import {
   User as UserIcon,
   LogOut,
   Settings,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
 import { Avatar } from '../common/Avatar';
-import { Badge } from '../common/Badge';
 
 export const Header: React.FC = () => {
   const {
@@ -46,18 +45,18 @@ export const Header: React.FC = () => {
   }
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 flex items-center justify-between transition-colors text-white">
+    <header className="sticky top-0 z-30 h-16 bg-[#0B1E36] border-b border-[#081526] px-6 flex items-center justify-between transition-colors text-white shadow-xs">
       {/* Brand & Platform */}
       <div className="flex items-center gap-4">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl bg-white/95 p-0.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0 border border-white/30">
+          <div className="w-9 h-9 rounded bg-white p-0.5 flex items-center justify-center shadow-xs shrink-0 border border-slate-200">
             <img src="/agni-logo.png" alt="AGNI Logo" className="w-full h-full object-contain" />
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-xs font-bold text-white leading-none tracking-tight">
+            <h1 className="text-xs font-bold text-white leading-none tracking-tight uppercase">
               {brandingConfig.platformName}
             </h1>
-            <p className="text-[10px] text-indigo-300 mt-0.5 font-medium">
+            <p className="text-[10px] text-blue-200 mt-0.5 font-medium">
               {brandingConfig.collegeName}
             </p>
           </div>
@@ -68,11 +67,11 @@ export const Header: React.FC = () => {
       <div className="flex-1 max-w-md mx-6 hidden md:block">
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
-          className="w-full flex items-center justify-between px-3.5 py-2 bg-slate-950/80 hover:bg-slate-800/80 text-slate-400 rounded-lg text-xs transition-colors border border-slate-800"
+          className="w-full flex items-center justify-between px-3.5 py-1.5 bg-slate-950 hover:bg-slate-800/80 text-slate-400 rounded-md text-xs transition-colors border border-slate-800"
         >
           <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-slate-400" />
-            <span>Search projects, students, skills...</span>
+            <Search className="w-3.5 h-3.5 text-slate-400" />
+            <span>Search projects, students, records...</span>
           </div>
           <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-900 border border-slate-700 rounded text-slate-400">
             Ctrl K
@@ -82,6 +81,7 @@ export const Header: React.FC = () => {
 
       {/* Header Actions */}
       <div className="flex items-center gap-3">
+<<<<<<< HEAD
         {/* Role Badge — clickable Admin shortcut for ADMIN role */}
         {currentUser.role === 'ADMIN' ? (
           <Link
@@ -98,16 +98,24 @@ export const Header: React.FC = () => {
             <span className="hidden sm:inline">{currentUser.role}</span>
           </div>
         )}
+=======
+        {/* Real Authenticated Role Badge */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold">
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden sm:inline">{currentUser.role}</span>
+        </div>
+>>>>>>> 3a676ef54d8559b29468c3d358c0b4ea279b1542
 
-        {/* AI Status Indicator */}
-        <Badge variant="ai" size="sm" icon={<Sparkles className="w-3 h-3 text-cyan-400 hidden sm:inline" />}>
-          <span className="hidden sm:inline">AI Active</span>
-        </Badge>
+        {/* System Status Indicator */}
+        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-[11px] font-medium text-emerald-400">
+          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+          <span>Portal Active</span>
+        </div>
 
         {/* Theme Toggle */}
         <button
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-          className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+          className="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition-colors"
           title="Toggle Dark / Light Mode"
         >
           {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -117,7 +125,7 @@ export const Header: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            className="relative p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition-colors"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
@@ -126,10 +134,10 @@ export const Header: React.FC = () => {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-slate-900 rounded-xl shadow-2xl border border-slate-800 py-2 z-50">
+            <div className="absolute right-0 mt-2 w-80 bg-slate-900 rounded-lg shadow-xl border border-slate-800 py-2 z-50">
               <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800">
                 <span className="text-xs font-bold text-white">Notifications</span>
-                <span className="text-[10px] text-indigo-400 font-medium">{unreadCount} unread</span>
+                <span className="text-[10px] text-blue-400 font-medium">{unreadCount} unread</span>
               </div>
               <div className="max-h-72 overflow-y-auto divide-y divide-slate-800/60">
                 {notifications.length === 0 ? (
@@ -147,7 +155,7 @@ export const Header: React.FC = () => {
                         setShowNotifications(false);
                       }}
                       className={`p-3 text-xs hover:bg-slate-800/50 cursor-pointer ${
-                        !n.read ? 'bg-indigo-950/20' : ''
+                        !n.read ? 'bg-slate-800/40' : ''
                       }`}
                     >
                       <div className="font-semibold text-white">{n.title}</div>
@@ -163,7 +171,7 @@ export const Header: React.FC = () => {
                 <Link
                   to="/notifications"
                   onClick={() => setShowNotifications(false)}
-                  className="text-[11px] font-semibold text-indigo-400 hover:underline"
+                  className="text-[11px] font-semibold text-blue-400 hover:underline"
                 >
                   View All Notifications
                 </Link>
@@ -176,7 +184,7 @@ export const Header: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-2 p-1 rounded-md hover:bg-slate-800 transition-colors"
           >
             <Avatar src={currentUser.avatar} name={currentUser.name} size="sm" isOnline />
             <div className="text-left hidden lg:block">
@@ -191,18 +199,18 @@ export const Header: React.FC = () => {
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-56 bg-slate-900 rounded-xl shadow-2xl border border-slate-800 py-1.5 z-50 text-xs">
+            <div className="absolute right-0 mt-2 w-56 bg-slate-900 rounded-lg shadow-xl border border-slate-800 py-1.5 z-50 text-xs">
               <div className="px-4 py-2 border-b border-slate-800">
                 <div className="font-bold text-white">{currentUser.name}</div>
                 <div className="text-slate-400 text-[11px]">{currentUser.email}</div>
                 {currentUser.studentId && (
-                  <div className="text-indigo-400 font-mono text-[10px] mt-0.5">{currentUser.studentId}</div>
+                  <div className="text-blue-400 font-mono text-[10px] mt-0.5">{currentUser.studentId}</div>
                 )}
               </div>
               <Link
                 to="/profile"
                 onClick={() => setShowProfileMenu(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:bg-slate-800"
+                className="flex items-center gap-2.5 px-4 py-2 text-slate-300 hover:bg-slate-800"
               >
                 <UserIcon className="w-4 h-4 text-slate-400" />
                 <span>My Profile</span>
@@ -210,7 +218,7 @@ export const Header: React.FC = () => {
               <Link
                 to="/settings"
                 onClick={() => setShowProfileMenu(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:bg-slate-800"
+                className="flex items-center gap-2.5 px-4 py-2 text-slate-300 hover:bg-slate-800"
               >
                 <Settings className="w-4 h-4 text-slate-400" />
                 <span>Platform Settings</span>
@@ -218,7 +226,7 @@ export const Header: React.FC = () => {
               <div className="border-t border-slate-800 my-1" />
               <button
                 onClick={handleLogout}
-                className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-rose-400 hover:bg-rose-950/40 cursor-pointer"
+                className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-400 hover:bg-rose-950/40 cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
