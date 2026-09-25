@@ -32,7 +32,11 @@ import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
 import { clientStorage } from '../storage/clientStorage';
 
-export const CoordinatorDashboardPage: React.FC = () => {
+interface CoordinatorDashboardPageProps {
+  defaultTab?: 'STUDENT' | 'TEACHER';
+}
+
+export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> = ({ defaultTab = 'TEACHER' }) => {
   const {
     currentUser,
     projects,
@@ -52,7 +56,7 @@ export const CoordinatorDashboardPage: React.FC = () => {
   }
 
   // Admin email management state
-  const [activeAdminTab, setActiveAdminTab] = useState<'STUDENT' | 'TEACHER'>('TEACHER');
+  const [activeAdminTab, setActiveAdminTab] = useState<'STUDENT' | 'TEACHER'>(defaultTab);
   const [singleEmail, setSingleEmail] = useState('');
   const [bulkEmailsText, setBulkEmailsText] = useState('');
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
