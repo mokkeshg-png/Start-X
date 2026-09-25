@@ -2,11 +2,11 @@ import { CollegeBrandingConfig } from '../types';
 
 // Only system configuration constants — NO mock business data
 export const INITIAL_BRANDING: CollegeBrandingConfig = {
-  collegeName: "Apex Institute of Technology",
-  collegeShortName: "APEX",
-  platformName: "APEX Project Intelligence",
-  tagline: "AI-Powered Student Project Collaboration & Monitoring Platform",
-  logoText: "APEX AI",
+  collegeName: "AGNI COLLEGE OF TECHNOLOGY",
+  collegeShortName: "ACT",
+  platformName: "INTELLIGENT PROJECT COLLABORATION PLATFORM",
+  tagline: "INTELLIGENT PROJECT COLLABORATION PLATFORM",
+  logoText: "ACT",
   primaryColor: "#0f172a",
   accentColor: "#6366f1"
 };
