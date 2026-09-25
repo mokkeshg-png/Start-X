@@ -11,8 +11,9 @@ export const getRoleNavigation = (role: UserRole): NavItem[] => {
   switch (role) {
     case 'ADMIN':
       return [
-        { label: 'Admin Dashboard', path: '/dashboard', iconName: 'LayoutDashboard' },
-        { label: 'Authorized Emails', path: '/dashboard', iconName: 'Mail' },
+        { label: 'Admin Dashboard', path: '/admin', iconName: 'LayoutDashboard' },
+        { label: 'Teacher Emails', path: '/admin/teachers', iconName: 'Users' },
+        { label: 'Student Emails', path: '/admin/students', iconName: 'GraduationCap' },
         { label: 'Audit Activity Log', path: '/audit', iconName: 'History' },
         { label: 'Notifications', path: '/notifications', iconName: 'Bell' },
         { label: 'Platform Settings', path: '/settings', iconName: 'Settings' }

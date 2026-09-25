@@ -52,7 +52,11 @@ class ClientStorage {
 
   // System Configuration
   getBranding(): CollegeBrandingConfig {
-    return this.getStorage<CollegeBrandingConfig>(KEYS.BRANDING, INITIAL_BRANDING);
+    const stored = this.getStorage<CollegeBrandingConfig>(KEYS.BRANDING, INITIAL_BRANDING);
+    if (!stored || !stored.collegeName || stored.collegeName.includes('Apex')) {
+      return INITIAL_BRANDING;
+    }
+    return stored;
   }
 
   saveBranding(config: CollegeBrandingConfig): void {

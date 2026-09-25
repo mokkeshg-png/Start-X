@@ -50,14 +50,14 @@ export const Header: React.FC = () => {
       {/* Brand & Platform */}
       <div className="flex items-center gap-4">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 font-bold flex items-center justify-center text-xs tracking-wider shadow-sm group-hover:scale-105 transition-transform text-white">
-            {brandingConfig.logoText}
+          <div className="w-9 h-9 rounded-xl bg-white/95 p-0.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0 border border-white/30">
+            <img src="/agni-logo.png" alt="AGNI Logo" className="w-full h-full object-contain" />
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-sm font-bold text-white leading-none tracking-tight">
+            <h1 className="text-xs font-bold text-white leading-none tracking-tight">
               {brandingConfig.platformName}
             </h1>
-            <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
+            <p className="text-[10px] text-indigo-300 mt-0.5 font-medium">
               {brandingConfig.collegeName}
             </p>
           </div>

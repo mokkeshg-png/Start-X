@@ -29,11 +29,63 @@ export const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-          {/* Protected Application Routes with Authentication Guards */}
+          {/* Unified Role Dashboard */}
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
+                <AppShell>
+                  <CoordinatorDashboardPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Dedicated Admin-Only Portal Routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute permission="admin:view-dashboard">
+                <AppShell>
+                  <CoordinatorDashboardPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/teachers"
+            element={
+              <ProtectedRoute permission="admin:view-dashboard">
+                <AppShell>
+                  <CoordinatorDashboardPage defaultTab="TEACHER" />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/students"
+            element={
+              <ProtectedRoute permission="admin:view-dashboard">
+                <AppShell>
+                  <CoordinatorDashboardPage defaultTab="STUDENT" />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/access"
+            element={
+              <ProtectedRoute permission="admin:view-dashboard">
+                <AppShell>
+                  <CoordinatorDashboardPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute permission="admin:view-dashboard">
                 <AppShell>
                   <CoordinatorDashboardPage />
                 </AppShell>
