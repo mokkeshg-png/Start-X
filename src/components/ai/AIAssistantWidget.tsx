@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Sparkles, X, Send, Bot, User as UserIcon, CornerDownLeft } from 'lucide-react';
+import { Sparkles, X, Send, Bot, User as UserIcon } from 'lucide-react';
 import { Button } from '../common/Button';
+import { clientStorage } from '../../storage/clientStorage';
 
 interface AIMessage {
   id: string;
@@ -11,12 +12,12 @@ interface AIMessage {
 }
 
 export const AIAssistantWidget: React.FC = () => {
-  const { isAIAssistantOpen, setIsAIAssistantOpen, teams, tasks, gaps, discussions } = useApp();
+  const { isAIAssistantOpen, setIsAIAssistantOpen, projects, projectDocuments, contributions, currentUser } = useApp();
   const [messages, setMessages] = useState<AIMessage[]>([
     {
       id: 'init-1',
       sender: 'ai',
-      text: 'Hello! I am APEX Project Intelligence AI. Ask me anything about your project teams, blocked tasks, active gaps, or contribution analysis.',
+      text: 'Hello! I am APEX Project Intelligence Assistant. Ask me anything about your projects, uploaded PRD requirements, team roles, or student contributions.',
       timestamp: 'Just now'
     }
   ]);
@@ -24,10 +25,10 @@ export const AIAssistantWidget: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
 
   const quickPrompts = [
-    "Why is Team Alpha flagged?",
-    "Which tasks are blocked?",
-    "Show unresolved discussions",
-    "Which role has the largest skill gap?"
+    'How is team compatibility evaluated?',
+    'What projects are active?',
+    'Show uploaded requirement files',
+    'How are student roles assigned?'
   ];
 
   const handleSend = (textToSend?: string) => {
@@ -46,26 +47,36 @@ export const AIAssistantWidget: React.FC = () => {
     setIsTyping(true);
 
     setTimeout(() => {
-      let aiResponseText = "";
+      let aiResponseText = '';
       const lower = query.toLowerCase();
 
-      if (lower.includes("team alpha") || lower.includes("flagged")) {
-        aiResponseText = "Team Alpha is flagged with health score 78/100 due to a critical dependency block on Task #5 (Payment Gateway API) and low QA participation for Jane Smith.";
-      } else if (lower.includes("blocked") || lower.includes("task")) {
-        const blocked = tasks.filter((t) => t.status === "Blocked");
-        if (blocked.length > 0) {
-          aiResponseText = `Currently ${blocked.length} blocked task(s):\n• ${blocked.map((b) => `${b.title} (Assigned: ${b.assignedToId})`).join('\n• ')}`;
+      if (lower.includes('compatibility') || lower.includes('evaluate') || lower.includes('algorithm')) {
+        aiResponseText =
+          'Compatibility is evaluated deterministically by comparing the project\'s required skills and PRD specifications with the registered skill profiles and evidence of assigned students. It calculates requirement coverage %, role alignment %, and flags missing skill gaps.';
+      } else if (lower.includes('project') || lower.includes('active')) {
+        if (projects.length > 0) {
+          aiResponseText = `Currently tracking ${projects.length} project(s):\n• ${projects
+            .map((p) => `${p.name} (${p.id}) - Status: ${p.status}`)
+            .join('\n• ')}`;
         } else {
-          aiResponseText = "No tasks are currently blocked across your active teams!";
+          aiResponseText =
+            'No projects have been created yet. Faculty members can click "CREATE PROJECT" on their dashboard to start.';
         }
-      } else if (lower.includes("unresolved") || lower.includes("discussion")) {
-        const unres = discussions.filter((d) => !d.resolved);
-        aiResponseText = `Found ${unres.length} unresolved discussion thread(s):\n• ${unres.map((d) => `${d.title} (${d.topic})`).join('\n• ')}`;
-      } else if (lower.includes("skill gap") || lower.includes("role")) {
-        aiResponseText = "The largest detected skill gap is for Database Specialist in Team Gamma (IoT Energy Grid), which currently lacks a dedicated database architect.";
+      } else if (lower.includes('file') || lower.includes('prd') || lower.includes('document')) {
+        if (projectDocuments.length > 0) {
+          aiResponseText = `Currently indexed ${projectDocuments.length} requirement document(s):\n• ${projectDocuments
+            .map((d) => `${d.name} (${d.size}) - ${d.analysisAvailable ? 'Analyzed' : 'Format Preserved'}`)
+            .join('\n• ')}`;
+        } else {
+          aiResponseText =
+            'No project requirement files attached to the current active project yet. Teachers can upload PRDs in PDF, DOCX, Markdown, or Code format.';
+        }
+      } else if (lower.includes('role') || lower.includes('leader')) {
+        aiResponseText =
+          'In APEX, Team Leader is a project-level role assignment given to an existing Student account by the supervising Faculty. All team members receive predefined or custom project roles.';
       } else {
-        const alpha = teams.find((t) => t.id === 'team-alpha');
-        aiResponseText = `Project Intelligence Overview: Active Teams: ${teams.length}. Team Alpha is at ${alpha?.progress || 65}% progress. All AI insights are calculated from live project telemetry.`;
+        const studentCount = clientStorage.getUsers().filter((u) => u.role === 'STUDENT').length;
+        aiResponseText = `Project Intelligence telemetry: ${projects.length} projects, ${studentCount} registered students, ${contributions.length} submissions logged. All data is evaluated against real runtime models without mock data.`;
       }
 
       const aiMsg: AIMessage = {
@@ -77,7 +88,7 @@ export const AIAssistantWidget: React.FC = () => {
 
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
-    }, 600);
+    }, 500);
   };
 
   if (!isAIAssistantOpen) {
@@ -93,71 +104,72 @@ export const AIAssistantWidget: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-96 max-w-[90vw] h-[520px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-indigo-200 dark:border-indigo-900/60 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-250">
+    <div className="fixed bottom-6 right-6 z-50 w-96 max-w-[90vw] h-[520px] bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-250 text-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white border-b border-indigo-800/40">
+      <div className="flex items-center justify-between px-4 py-3.5 bg-slate-950 text-white border-b border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 rounded-lg bg-indigo-500/20 border border-indigo-400/30 text-cyan-300">
-            <Bot className="w-5 h-5" />
+            <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-sm font-bold flex items-center gap-1.5">
-              APEX Project AI <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-            </h4>
-            <p className="text-[10px] text-indigo-200/80">Contextual Project Intelligence Assistant</p>
+            <h3 className="text-xs font-bold leading-tight">Project Intelligence Assistant</h3>
+            <span className="text-[10px] text-emerald-400 font-medium">Deterministic Runtime Engine</span>
           </div>
         </div>
+
         <button
           onClick={() => setIsAIAssistantOpen(false)}
-          className="text-slate-400 hover:text-white"
+          className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            {m.sender === 'ai' && (
-              <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-200 dark:border-indigo-800">
-                <Bot className="w-4 h-4" />
+      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs bg-slate-900/60">
+        {messages.map((m) => {
+          const isUser = m.sender === 'user';
+          return (
+            <div key={m.id} className={`flex gap-2.5 ${isUser ? 'flex-row-reverse' : ''}`}>
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                  isUser
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-indigo-950 border border-indigo-700/50 text-cyan-300'
+                }`}
+              >
+                {isUser ? <UserIcon className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
               </div>
-            )}
-            <div
-              className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 whitespace-pre-line ${
-                m.sender === 'user'
-                  ? 'bg-indigo-600 text-white rounded-tr-none'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 rounded-tl-none'
-              }`}
-            >
-              <p className="leading-relaxed">{m.text}</p>
-              <span className="block text-[9px] opacity-60 text-right mt-1">{m.timestamp}</span>
+
+              <div
+                className={`p-3 rounded-2xl max-w-[80%] leading-relaxed ${
+                  isUser
+                    ? 'bg-indigo-600 text-white rounded-tr-xs'
+                    : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-tl-xs whitespace-pre-line'
+                }`}
+              >
+                {m.text}
+                <span className="text-[9px] opacity-60 block mt-1 text-right">{m.timestamp}</span>
+              </div>
             </div>
-            {m.sender === 'user' && (
-              <div className="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center shrink-0">
-                <UserIcon className="w-3.5 h-3.5" />
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
+
         {isTyping && (
-          <div className="flex items-center gap-2 text-xs text-indigo-500 font-medium italic">
-            <Bot className="w-4 h-4 animate-bounce" /> Analyzing project telemetry...
+          <div className="flex gap-2 items-center text-slate-400 text-xs italic p-2">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+            Evaluating live project telemetry...
           </div>
         )}
       </div>
 
       {/* Quick Prompts */}
-      <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex gap-1.5 overflow-x-auto">
-        {quickPrompts.map((p, idx) => (
+      <div className="px-3 py-2 border-t border-slate-800 bg-slate-950 flex gap-1.5 overflow-x-auto text-[10px]">
+        {quickPrompts.map((p) => (
           <button
-            key={idx}
+            key={p}
             onClick={() => handleSend(p)}
-            className="shrink-0 text-[11px] px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-400 transition-colors"
+            className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 whitespace-nowrap transition-colors"
           >
             {p}
           </button>
@@ -165,22 +177,18 @@ export const AIAssistantWidget: React.FC = () => {
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
+      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="p-3 border-t border-slate-800 bg-slate-950 flex gap-2">
         <input
           type="text"
-          placeholder="Ask AI about teams, tasks, gaps..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          className="flex-1 text-xs px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          placeholder="Ask project question..."
+          className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
-        <Button
-          size="sm"
-          variant="ai"
-          onClick={() => handleSend()}
-          icon={<Send className="w-3.5 h-3.5" />}
-        />
-      </div>
+        <Button type="submit" variant="primary" size="sm" icon={<Send className="w-3.5 h-3.5" />}>
+          Ask
+        </Button>
+      </form>
     </div>
   );
 };

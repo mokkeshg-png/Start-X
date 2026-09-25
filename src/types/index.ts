@@ -1,180 +1,107 @@
-export type UserRole = 'STAFF_COORDINATOR' | 'TEAM_LEADER' | 'TEAM_MEMBER' | 'DEPARTMENT_HEAD';
+// ============================================================
+// FINAL ROLE MODEL: Only 3 system-level authentication roles
+// "Team Leader" is a project-scoped assignment, NOT a login role
+// ============================================================
+export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
 
+// ============================================================
+// Authorized Email — Admin adds these before registration
+// ============================================================
+export type EmailApprovalStatus = 'NOT_REGISTERED' | 'REGISTERED' | 'ACTIVE';
+
+export interface AuthorizedEmail {
+  id: string;
+  email: string;
+  role: 'TEACHER' | 'STUDENT';
+  addedAt: string;
+  status: EmailApprovalStatus;
+  userId?: string; // linked after registration
+}
+
+// ============================================================
+// User — Base model for all authenticated users
+// ============================================================
 export interface User {
   id: string;
   name: string;
   email: string;
-  studentId?: string;
   avatar: string;
   role: UserRole;
   department: string;
-  year?: string;
+  year?: string; // Students only
   bio?: string;
   skills?: string[];
   github?: string;
   linkedin?: string;
+  studentId?: string; // Auto-generated unique ID for students
+  profileComplete?: boolean;
+  createdAt: string;
 }
 
-export type ProjectPhase = 'Planning' | 'Development' | 'Review' | 'Completed';
+// ============================================================
+// Project — Created by Teacher
+// ============================================================
+export type ProjectStatus = 'DRAFT' | 'ACTIVE' | 'FINALIZED' | 'COMPLETED';
 
-export interface HealthBreakdown {
-  contribution: number;
-  progress: number;
-  collaboration: number;
-  communication: number;
-  documentation: number;
-  dependencies: number;
-}
-
-export interface Team {
-  id: string;
+export interface Project {
+  id: string; // Auto-generated unique project ID (PRJ-XXXXXXXX)
   name: string;
-  projectTitle: string;
+  description: string;
   problemStatement: string;
-  description: string;
   category: string;
-  expectedDuration: string;
-  leaderId: string;
-  memberIds: string[];
-  memberRoles: Record<string, string>; // memberId -> role name (Frontend, Backend, etc.)
-  progress: number; // 0 - 100
-  healthScore: number; // 0 - 100
-  status: ProjectPhase;
+  projectType: string;
+  duration: string;
+  requiredSkills: string[];
+  status: ProjectStatus;
+  teacherId: string; // owning teacher
+  teamLeaderId?: string; // student ID assigned as team leader
+  memberIds: string[]; // student IDs
+  memberRoles: Record<string, string>; // studentId -> role name
   createdAt: string;
-  healthBreakdown: HealthBreakdown;
-  activeTasksCount: number;
-  openGapsCount: number;
-  lastActivity: string;
+  updatedAt: string;
 }
 
-export type TaskStatus = 'Pending' | 'Ongoing' | 'Completed' | 'Blocked';
-export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+// ============================================================
+// Project Document — PRD / requirement docs uploaded by Teacher
+// ============================================================
+export type DocType = 'PDF' | 'DOCX' | 'PPTX' | 'ZIP' | 'Code' | 'Markdown' | 'Image' | 'Other';
 
-export interface Task {
+export interface ProjectDocument {
   id: string;
-  teamId: string;
-  title: string;
-  description: string;
-  assignedToId: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  category: string;
-  dueDate: string;
-  createdAt: string;
-}
-
-export interface MessageAttachment {
-  name: string;
-  url: string;
-  size: string;
-}
-
-export interface DiscussionMessage {
-  id: string;
-  discussionId: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar: string;
-  senderRole: string;
-  text: string;
-  timestamp: string;
-  attachments?: MessageAttachment[];
-}
-
-export interface Discussion {
-  id: string;
-  teamId: string;
-  title: string;
-  topic: string;
-  lastActivity: string;
-  messageCount: number;
-  resolved: boolean;
-  messages: DiscussionMessage[];
-  aiAnalysis: {
-    decisions: string[];
-    problems: string[];
-    unresolved: string[];
-    actionItems: string[];
-  };
-}
-
-export type DocType = 'PDF' | 'DOCX' | 'PPTX' | 'ZIP' | 'Code' | 'Markdown';
-export type DocAIStatus = 'MATCH' | 'WARNING' | 'MISMATCH';
-
-export interface DocumentItem {
-  id: string;
-  teamId: string;
+  projectId: string;
   name: string;
   type: DocType;
   size: string;
-  uploadedBy: string;
+  uploadedById: string;
+  uploadedByName: string;
   uploadedAt: string;
-  version: string;
-  url: string;
-  aiStatus: DocAIStatus;
-  aiAnalysisNote?: string;
-  consistencyDetails?: {
-    scopeItem: string;
-    docItem: string;
-    submittedWorkItem: string;
-    status: DocAIStatus;
-    issue?: string;
-  }[];
+  // File reference — in frontend-only mode, store data URL or file metadata
+  fileRef?: string;
+  // Analysis status
+  analysisAvailable: boolean;
+  analysisNote?: string;
 }
 
-export interface KnowledgeNode {
+// ============================================================
+// Student Contribution — Real uploads by students
+// ============================================================
+export interface StudentContribution {
   id: string;
-  label: string;
-  type: 'Student' | 'Role' | 'Topic';
-  role?: string;
-  studentId?: string;
-  exchangeCount: number;
-  isIsolated?: boolean;
-}
-
-export interface KnowledgeEdge {
-  id: string;
-  source: string;
-  target: string;
-  topic: string;
-  count: number;
-}
-
-export type GapImpact = 'High' | 'Medium' | 'Low';
-export type GapStatus = 'Open' | 'Resolved' | 'Ignored';
-
-export interface GapRecommendation {
-  actionText: string;
-  reason: string;
-  priority: string;
-  actionType: 'assign_task' | 'notify_member' | 'resolve' | 'open_discussion';
-}
-
-export interface CollaborationGap {
-  id: string;
-  teamId: string;
-  type: string;
-  description: string;
-  affectedRole: string;
-  affectedMemberId: string;
-  affectedMemberName: string;
-  impact: GapImpact;
-  detectedDate: string;
-  status: GapStatus;
-  recommendation: GapRecommendation;
-}
-
-export interface AIInsight {
-  id: string;
-  teamId: string;
+  projectId: string;
+  studentId: string;
+  studentName: string;
   title: string;
-  category: 'completed' | 'discussed' | 'learned' | 'risk' | 'dependency';
-  content: string;
-  severity: 'info' | 'warning' | 'critical' | 'success';
-  timestamp: string;
-  attribution: string;
+  description: string;
+  fileName?: string;
+  fileRef?: string;
+  fileSize?: string;
+  uploadedAt: string;
+  updatedAt: string;
 }
 
+// ============================================================
+// Student Profile — Extended profile information
+// ============================================================
 export interface SkillItem {
   name: string;
   proficiency: number; // 0-100
@@ -186,7 +113,7 @@ export interface SkillEvidence {
   skillName: string;
   projectName: string;
   submittedWork: string;
-  evidenceType: string; // 'GitHub Commit' | 'Code Artifact' | 'API Schema' | 'Test Suite'
+  evidenceType: string;
   evidenceStrength: number; // 0-100
 }
 
@@ -211,27 +138,83 @@ export interface StudentProfile {
   projects: StudentProject[];
 }
 
-export interface ContributionDataPoint {
-  week: string;
-  code: number;
-  docs: number;
-  tasks: number;
-  discussions: number;
-  reviews: number;
+// ============================================================
+// AI Analysis — Project + Team compatibility
+// ============================================================
+export interface AIAnalysisResult {
+  id: string;
+  projectId: string;
+  timestamp: string;
+  // Project requirements derived from documents + description
+  derivedRequirements: string[];
+  requiredSkills: string[];
+  requiredRoles: string[];
+  // Coverage
+  coveredSkills: string[];
+  missingSkills: string[];
+  coveredRoles: string[];
+  missingRoles: string[];
+  duplicateRoles: string[];
+  // Scores
+  requirementCoverage: number; // 0-100
+  roleAlignment: number; // 0-100
+  skillEvidenceCoverage: number; // 0-100
+  overallCompatibility: number; // 0-100
+  // Per-member analysis
+  memberAnalysis: {
+    studentId: string;
+    studentName: string;
+    assignedRole: string;
+    matchingSkills: string[];
+    missingSkills: string[];
+    evidenceStrength: number;
+    roleMatch: boolean;
+  }[];
+  // Explanations
+  explanations: string[];
+  risks: string[];
+  recommendations: string[];
+  // Label for local analysis
+  analysisType: 'LOCAL_DETERMINISTIC' | 'AI_SERVICE';
 }
 
-export interface MemberContribution {
-  studentId: string;
-  studentName: string;
-  role: string;
-  overallScore: number;
-  roleAlignment: number;
-  qualityScore: number;
-  activityTrend: 'Increasing' | 'Stable' | 'Decreasing' | 'Missing';
-  aiNotes: string;
-  weeklyHistory: ContributionDataPoint[];
+// ============================================================
+// Notifications
+// ============================================================
+export interface NotificationItem {
+  id: string;
+  userId: string; // target user
+  title: string;
+  description: string;
+  category: 'PROJECT_ASSIGNMENT' | 'ROLE_CHANGE' | 'TEAM_UPDATE' | 'MESSAGE' | 'SYSTEM';
+  timestamp: string;
+  read: boolean;
+  actionUrl?: string;
+  projectId?: string;
+  projectName?: string;
 }
 
+// ============================================================
+// Messages — Team Chat / Direct / Mentor
+// ============================================================
+export type MessageChannelType = 'TEAM_CHAT' | 'DIRECT' | 'MENTOR';
+
+export interface Message {
+  id: string;
+  channelType: MessageChannelType;
+  channelId: string; // projectId for TEAM_CHAT, or constructed ID for DM/mentor
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  senderRole: UserRole;
+  text: string;
+  timestamp: string;
+  recipientId?: string; // for DM/mentor messages
+}
+
+// ============================================================
+// Collaboration Request
+// ============================================================
 export interface CollaborationRequest {
   id: string;
   senderId: string;
@@ -245,16 +228,9 @@ export interface CollaborationRequest {
   sentAt: string;
 }
 
-export interface NotificationItem {
-  id: string;
-  title: string;
-  description: string;
-  category: 'AI Alert' | 'Task' | 'Contribution' | 'Discussion' | 'Collaboration' | 'System';
-  timestamp: string;
-  read: boolean;
-  actionUrl?: string;
-}
-
+// ============================================================
+// Activity Log
+// ============================================================
 export interface ActivityLog {
   id: string;
   actorName: string;
@@ -262,21 +238,12 @@ export interface ActivityLog {
   action: string;
   object: string;
   timestamp: string;
-  teamId?: string;
+  projectId?: string;
 }
 
-export interface TeammateRecommendation {
-  studentId: string;
-  name: string;
-  avatar: string;
-  department: string;
-  skills: string[];
-  verifiedSkills: string[];
-  matchPercentage: number;
-  recommendedRole: string;
-  matchReasons: string[];
-}
-
+// ============================================================
+// College Branding
+// ============================================================
 export interface CollegeBrandingConfig {
   collegeName: string;
   collegeShortName: string;

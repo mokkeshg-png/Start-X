@@ -1,219 +1,300 @@
 import {
-  Team,
-  Task,
-  Discussion,
-  DocumentItem,
-  CollaborationGap,
-  AIInsight,
+  Project,
+  ProjectDocument,
   User,
-  StudentProfile
+  StudentProfile,
+  AIAnalysisResult
 } from '../types';
+import { clientStorage } from '../storage/clientStorage';
 
-export interface AICompatibilityReport {
-  compatibilityScore: number;
-  requiredSkills: string[];
-  coveredSkills: string[];
-  missingSkills: string[];
-  roleCoverage: Record<string, boolean>;
-  riskAreas: string[];
-  recommendationText: string;
-}
-
+/**
+ * Deterministic Frontend AI Analysis Engine
+ * Uses ACTUAL project requirements + student profiles + assigned roles.
+ * Designed as a replaceable service interface for future backend AI integration.
+ * 
+ * NEVER fabricates source data.
+ * Clearly labels results as LOCAL_DETERMINISTIC analysis.
+ */
 class AIEngine {
-  // 1. Dynamic Team Compatibility Analysis Engine
-  analyzeTeamCompatibility(
-    projectTitle: string,
-    problemStatement: string,
-    category: string,
-    memberIds: string[],
-    memberRoles: Record<string, string>,
-    allUsers: User[],
-    allProfiles: Record<string, StudentProfile>
-  ): AICompatibilityReport {
-    // Determine required skills based on project specifications
-    const requiredSkillsSet = new Set<string>();
-    const lowerText = `${projectTitle} ${problemStatement} ${category}`.toLowerCase();
+  /**
+   * Analyze team compatibility against actual project requirements.
+   * 
+   * INPUTS:
+   * A. Project details (description, category, type, required skills)
+   * B. Uploaded PRD/project documents
+   * C. Selected student profiles
+   * D. Teacher-assigned roles
+   * 
+   * OUTPUTS:
+   * - Derived requirements from project data
+   * - Skill coverage analysis
+   * - Role alignment analysis
+   * - Evidence-based scoring
+   * - Explainable results
+   */
+  analyzeProjectTeamCompatibility(project: Project): AIAnalysisResult {
+    const allUsers = clientStorage.getUsers();
+    const allProfiles = clientStorage.getStudentProfiles();
+    const projectDocs = clientStorage.getProjectDocuments().filter(d => d.projectId === project.id);
 
-    if (lowerText.includes('web') || lowerText.includes('frontend') || lowerText.includes('full stack') || lowerText.includes('e-commerce')) {
-      requiredSkillsSet.add('React.js');
-      requiredSkillsSet.add('TypeScript');
-      requiredSkillsSet.add('Tailwind CSS');
-    }
-    if (lowerText.includes('backend') || lowerText.includes('api') || lowerText.includes('full stack') || lowerText.includes('e-commerce') || lowerText.includes('server')) {
-      requiredSkillsSet.add('Node.js');
-      requiredSkillsSet.add('REST APIs');
-    }
-    if (lowerText.includes('database') || lowerText.includes('sql') || lowerText.includes('postgres') || lowerText.includes('data') || lowerText.includes('e-commerce')) {
-      requiredSkillsSet.add('PostgreSQL');
-    }
-    if (lowerText.includes('ai') || lowerText.includes('machine learning') || lowerText.includes('python') || lowerText.includes('nlp')) {
-      requiredSkillsSet.add('Python');
-      requiredSkillsSet.add('PyTorch');
-    }
-    if (lowerText.includes('iot') || lowerText.includes('embedded') || lowerText.includes('sensor')) {
-      requiredSkillsSet.add('IoT Telemetry');
-      requiredSkillsSet.add('Python');
-    }
+    // 1. Derive requirements from project data
+    const derivedRequirements = this.deriveRequirements(project, projectDocs);
+    const requiredSkills = this.deriveRequiredSkills(project, derivedRequirements);
+    const requiredRoles = this.deriveRequiredRoles(project, derivedRequirements);
 
-    if (requiredSkillsSet.size === 0) {
-      requiredSkillsSet.add('Frontend');
-      requiredSkillsSet.add('Backend');
-      requiredSkillsSet.add('Database');
-    }
+    // 2. Analyze each team member
+    const memberAnalysis = project.memberIds.map(memberId => {
+      const user = allUsers.find(u => u.id === memberId);
+      const profile = allProfiles[memberId];
+      const assignedRole = project.memberRoles[memberId] || 'Unassigned';
 
-    const requiredSkills = Array.from(requiredSkillsSet);
+      const userSkills = new Set<string>();
+      if (user?.skills) user.skills.forEach(s => userSkills.add(s.toLowerCase()));
+      if (profile?.skills) profile.skills.forEach(s => userSkills.add(s.name.toLowerCase()));
 
-    // Collect all actual skills from assigned team members
-    const availableSkillsSet = new Set<string>();
-    memberIds.forEach((mId) => {
-      const u = allUsers.find((user) => user.id === mId);
-      if (u && u.skills) {
-        u.skills.forEach((sk) => availableSkillsSet.add(sk));
+      const matchingSkills = requiredSkills.filter(rs =>
+        Array.from(userSkills).some(us =>
+          us.includes(rs.toLowerCase()) || rs.toLowerCase().includes(us)
+        )
+      );
+
+      const missingSkills = requiredSkills.filter(rs => !matchingSkills.includes(rs));
+
+      // Evidence strength from profile
+      let evidenceStrength = 0;
+      if (profile?.evidenceMap && profile.evidenceMap.length > 0) {
+        const relevantEvidence = profile.evidenceMap.filter(e =>
+          requiredSkills.some(rs => e.skillName.toLowerCase().includes(rs.toLowerCase()) ||
+            rs.toLowerCase().includes(e.skillName.toLowerCase()))
+        );
+        evidenceStrength = relevantEvidence.length > 0
+          ? Math.round(relevantEvidence.reduce((sum, e) => sum + e.evidenceStrength, 0) / relevantEvidence.length)
+          : 0;
       }
-      const prof = allProfiles[mId];
-      if (prof && prof.skills) {
-        prof.skills.forEach((sk) => availableSkillsSet.add(sk.name));
-      }
+
+      // Check if assigned role matches a required role
+      const roleMatch = requiredRoles.some(rr =>
+        assignedRole.toLowerCase().includes(rr.toLowerCase()) ||
+        rr.toLowerCase().includes(assignedRole.toLowerCase())
+      );
+
+      return {
+        studentId: memberId,
+        studentName: user?.name || 'Unknown Student',
+        assignedRole,
+        matchingSkills,
+        missingSkills,
+        evidenceStrength,
+        roleMatch
+      };
     });
 
-    const coveredSkills: string[] = [];
-    const missingSkills: string[] = [];
+    // 3. Calculate coverage
+    const allCoveredSkills = new Set<string>();
+    memberAnalysis.forEach(ma => ma.matchingSkills.forEach(s => allCoveredSkills.add(s)));
+    const coveredSkills = Array.from(allCoveredSkills);
+    const missingSkills = requiredSkills.filter(rs => !coveredSkills.includes(rs));
 
-    requiredSkills.forEach((reqSk) => {
-      let isCovered = false;
-      availableSkillsSet.forEach((avSk) => {
-        if (avSk.toLowerCase().includes(reqSk.toLowerCase()) || reqSk.toLowerCase().includes(avSk.toLowerCase())) {
-          isCovered = true;
-        }
-      });
-      if (isCovered) {
-        coveredSkills.push(reqSk);
-      } else {
-        missingSkills.push(reqSk);
-      }
-    });
+    const coveredRoles = requiredRoles.filter(rr =>
+      Object.values(project.memberRoles).some(mr =>
+        mr.toLowerCase().includes(rr.toLowerCase()) || rr.toLowerCase().includes(mr.toLowerCase())
+      )
+    );
+    const missingRoles = requiredRoles.filter(rr => !coveredRoles.includes(rr));
 
-    const compatibilityScore = requiredSkills.length > 0
+    // Detect duplicate roles
+    const roleValues = Object.values(project.memberRoles).map(r => r.toLowerCase());
+    const roleCounts: Record<string, number> = {};
+    roleValues.forEach(r => { roleCounts[r] = (roleCounts[r] || 0) + 1; });
+    const duplicateRoles = Object.entries(roleCounts)
+      .filter(([_, count]) => count > 1)
+      .map(([role]) => role);
+
+    // 4. Calculate scores
+    const requirementCoverage = requiredSkills.length > 0
       ? Math.round((coveredSkills.length / requiredSkills.length) * 100)
-      : 80;
+      : 0;
 
-    const riskAreas: string[] = [];
+    const roleAlignment = requiredRoles.length > 0
+      ? Math.round((coveredRoles.length / requiredRoles.length) * 100)
+      : 0;
+
+    const avgEvidence = memberAnalysis.length > 0
+      ? Math.round(memberAnalysis.reduce((sum, ma) => sum + ma.evidenceStrength, 0) / memberAnalysis.length)
+      : 0;
+
+    const overallCompatibility = Math.round(
+      (requirementCoverage * 0.4) + (roleAlignment * 0.3) + (avgEvidence * 0.3)
+    );
+
+    // 5. Generate explanations
+    const explanations: string[] = [];
+    const risks: string[] = [];
+    const recommendations: string[] = [];
+
+    if (coveredSkills.length > 0) {
+      explanations.push(`Team covers ${coveredSkills.length} of ${requiredSkills.length} required skills: ${coveredSkills.join(', ')}.`);
+    }
     if (missingSkills.length > 0) {
-      riskAreas.push(`Missing core expertise in ${missingSkills.join(', ')}.`);
+      risks.push(`Missing skills: ${missingSkills.join(', ')}. No team member has demonstrated proficiency in these areas.`);
+      recommendations.push(`Consider adding a team member with expertise in ${missingSkills[0]} to address the gap.`);
     }
-    if (memberIds.length < 3) {
-      riskAreas.push('Team headcount is below recommended minimum (3 members).');
+    if (missingRoles.length > 0) {
+      risks.push(`Missing roles: ${missingRoles.join(', ')}. These project responsibilities are not covered by any assigned member.`);
+    }
+    if (duplicateRoles.length > 0) {
+      explanations.push(`Duplicate roles detected: ${duplicateRoles.join(', ')}. Multiple members share the same role assignment.`);
+    }
+    if (project.memberIds.length < 3) {
+      risks.push('Team size is below recommended minimum (3 members).');
+    }
+    if (avgEvidence === 0) {
+      explanations.push('No verified skill evidence available for team members. Consider encouraging students to complete their profiles.');
+    }
+    if (projectDocs.length === 0) {
+      explanations.push('No project requirement documents uploaded. Analysis is based on project description and required skills only.');
     }
 
-    let recommendationText = 'Team skill coverage is well-balanced across all required technical domains.';
-    if (missingSkills.length > 0) {
-      recommendationText = `Consider recruiting a student with verified experience in ${missingSkills[0]} to mitigate technical risk.`;
-    }
+    memberAnalysis.forEach(ma => {
+      if (!ma.roleMatch) {
+        risks.push(`${ma.studentName} is assigned "${ma.assignedRole}" but their skills may not fully align with this role.`);
+      }
+    });
 
-    const roleCoverage: Record<string, boolean> = {
-      Frontend: Object.values(memberRoles).some((r) => r.toLowerCase().includes('frontend') || r.toLowerCase().includes('ui')),
-      Backend: Object.values(memberRoles).some((r) => r.toLowerCase().includes('backend')),
-      Database: Object.values(memberRoles).some((r) => r.toLowerCase().includes('database') || r.toLowerCase().includes('sql')),
-      QA: Object.values(memberRoles).some((r) => r.toLowerCase().includes('qa') || r.toLowerCase().includes('testing'))
-    };
+    if (overallCompatibility >= 80) {
+      explanations.push('Team composition is well-balanced for the project requirements.');
+    } else if (overallCompatibility >= 50) {
+      recommendations.push('Team has moderate coverage. Consider addressing skill gaps before project kickoff.');
+    } else {
+      recommendations.push('Team has significant gaps. Restructuring or additional recruitment is recommended.');
+    }
 
     return {
-      compatibilityScore,
+      id: `analysis-${project.id}-${Date.now()}`,
+      projectId: project.id,
+      timestamp: new Date().toISOString(),
+      derivedRequirements,
       requiredSkills,
+      requiredRoles,
       coveredSkills,
       missingSkills,
-      roleCoverage,
-      riskAreas,
-      recommendationText
+      coveredRoles,
+      missingRoles,
+      duplicateRoles,
+      requirementCoverage,
+      roleAlignment,
+      skillEvidenceCoverage: avgEvidence,
+      overallCompatibility,
+      memberAnalysis,
+      explanations,
+      risks,
+      recommendations,
+      analysisType: 'LOCAL_DETERMINISTIC'
     };
   }
 
-  // 2. Dynamic Collaboration Gap Detection Engine
-  detectGaps(team: Team, tasks: Task[], discussions: Discussion[]): CollaborationGap[] {
-    const gaps: CollaborationGap[] = [];
+  private deriveRequirements(project: Project, docs: ProjectDocument[]): string[] {
+    const reqs: string[] = [];
+    const text = `${project.name} ${project.description} ${project.problemStatement} ${project.category} ${project.projectType}`.toLowerCase();
 
-    // Gap Rule 1: Blocked Tasks
-    const blockedTasks = tasks.filter((t) => t.teamId === team.id && t.status === 'Blocked');
-    blockedTasks.forEach((bt) => {
-      gaps.push({
-        id: `gap-bt-${bt.id}`,
-        teamId: team.id,
-        type: `Task Bottleneck: ${bt.title}`,
-        description: `Task '${bt.title}' is currently marked Blocked, halting dependent sprint progress.`,
-        affectedRole: bt.category || 'Developer',
-        affectedMemberId: bt.assignedToId,
-        affectedMemberName: 'Assigned Member',
-        impact: bt.priority === 'Critical' ? 'High' : 'Medium',
-        detectedDate: new Date().toISOString().split('T')[0],
-        status: 'Open',
-        recommendation: {
-          actionText: `Unblock task '${bt.title}'`,
-          reason: `Resolving dependency on task #${bt.id} will restore velocity.`,
-          priority: bt.priority === 'Critical' ? 'High' : 'Medium',
-          actionType: 'assign_task'
-        }
-      });
-    });
-
-    // Gap Rule 2: Unresolved Discussions
-    const unresolvedDiscussions = discussions.filter((d) => d.teamId === team.id && !d.resolved);
-    if (unresolvedDiscussions.length > 2) {
-      gaps.push({
-        id: `gap-disc-${team.id}`,
-        teamId: team.id,
-        type: 'Unresolved Architecture Discussions',
-        description: `Team ${team.name} has ${unresolvedDiscussions.length} unresolved discussion threads requiring coordinator guidance.`,
-        affectedRole: 'Team Leader',
-        affectedMemberId: team.leaderId,
-        affectedMemberName: 'Team Leader',
-        impact: 'Medium',
-        detectedDate: new Date().toISOString().split('T')[0],
-        status: 'Open',
-        recommendation: {
-          actionText: 'Review and resolve technical discussions',
-          reason: 'Aligning team architecture choices reduces scope friction.',
-          priority: 'Medium',
-          actionType: 'open_discussion'
-        }
-      });
+    // Derive from project text
+    if (text.includes('web') || text.includes('frontend') || text.includes('full stack') || text.includes('e-commerce') || text.includes('website')) {
+      reqs.push('Frontend Development');
+    }
+    if (text.includes('backend') || text.includes('api') || text.includes('full stack') || text.includes('server') || text.includes('e-commerce')) {
+      reqs.push('Backend Development');
+    }
+    if (text.includes('database') || text.includes('sql') || text.includes('data') || text.includes('storage')) {
+      reqs.push('Database Design');
+    }
+    if (text.includes('auth') || text.includes('login') || text.includes('security')) {
+      reqs.push('Authentication & Security');
+    }
+    if (text.includes('deploy') || text.includes('devops') || text.includes('ci/cd') || text.includes('docker')) {
+      reqs.push('Deployment & DevOps');
+    }
+    if (text.includes('ai') || text.includes('machine learning') || text.includes('ml') || text.includes('nlp')) {
+      reqs.push('AI/ML Implementation');
+    }
+    if (text.includes('mobile') || text.includes('app')) {
+      reqs.push('Mobile Development');
+    }
+    if (text.includes('iot') || text.includes('embedded') || text.includes('sensor')) {
+      reqs.push('IoT Integration');
+    }
+    if (text.includes('test') || text.includes('qa') || text.includes('quality')) {
+      reqs.push('Testing & QA');
+    }
+    if (text.includes('design') || text.includes('ui') || text.includes('ux')) {
+      reqs.push('UI/UX Design');
     }
 
-    return gaps;
+    // Add from required skills
+    project.requiredSkills.forEach(skill => {
+      if (!reqs.some(r => r.toLowerCase().includes(skill.toLowerCase()))) {
+        reqs.push(skill);
+      }
+    });
+
+    // Add from document metadata (if docs uploaded)
+    if (docs.length > 0) {
+      reqs.push('Documentation & PRD Compliance');
+    }
+
+    if (reqs.length === 0) {
+      reqs.push('General Development');
+    }
+
+    return reqs;
   }
 
-  // 3. Dynamic Collective AI Insights Generator
-  generateCollectiveInsights(team: Team, tasks: Task[], discussions: Discussion[], docs: DocumentItem[]): AIInsight[] {
-    const insights: AIInsight[] = [];
-    const teamTasks = tasks.filter((t) => t.teamId === team.id);
-    const completedTasks = teamTasks.filter((t) => t.status === 'Completed');
-    const progressPct = teamTasks.length > 0 ? Math.round((completedTasks.length / teamTasks.length) * 100) : team.progress;
+  private deriveRequiredSkills(project: Project, requirements: string[]): string[] {
+    const skills = new Set<string>();
+    const text = `${project.name} ${project.description} ${project.problemStatement} ${project.category}`.toLowerCase();
 
-    insights.push({
-      id: `ins-prog-${team.id}`,
-      teamId: team.id,
-      title: `Sprint Phase Execution: ${team.name}`,
-      category: 'completed',
-      content: `Team ${team.name} is currently at ${progressPct}% sprint task completion with ${completedTasks.length} of ${teamTasks.length} tasks completed.`,
-      severity: progressPct >= 70 ? 'success' : progressPct >= 40 ? 'info' : 'warning',
-      timestamp: 'Just now',
-      attribution: 'AI Dynamic Telemetry Engine • Review Recommended'
+    // Map requirements to skills
+    requirements.forEach(req => {
+      const rl = req.toLowerCase();
+      if (rl.includes('frontend')) { skills.add('React.js'); skills.add('TypeScript'); skills.add('CSS'); }
+      if (rl.includes('backend')) { skills.add('Node.js'); skills.add('REST APIs'); }
+      if (rl.includes('database')) { skills.add('PostgreSQL'); skills.add('Database Design'); }
+      if (rl.includes('auth')) { skills.add('JWT'); skills.add('Security'); }
+      if (rl.includes('deploy') || rl.includes('devops')) { skills.add('Docker'); skills.add('CI/CD'); }
+      if (rl.includes('ai') || rl.includes('ml')) { skills.add('Python'); skills.add('PyTorch'); }
+      if (rl.includes('mobile')) { skills.add('React Native'); }
+      if (rl.includes('iot')) { skills.add('IoT Telemetry'); skills.add('Python'); }
+      if (rl.includes('test') || rl.includes('qa')) { skills.add('Testing'); skills.add('Cypress'); }
+      if (rl.includes('ui') || rl.includes('ux')) { skills.add('Figma'); skills.add('UI/UX'); }
     });
 
-    const blocked = teamTasks.filter((t) => t.status === 'Blocked');
-    if (blocked.length > 0) {
-      insights.push({
-        id: `ins-block-${team.id}`,
-        teamId: team.id,
-        title: 'Task Dependency Bottleneck',
-        category: 'dependency',
-        content: `Identified ${blocked.length} blocked task(s): ${blocked.map((b) => b.title).join(', ')}. Immediate unblocking recommended.`,
-        severity: 'critical',
-        timestamp: 'Just now',
-        attribution: 'AI Task Dependency Analyzer'
-      });
+    // Add explicit required skills from project
+    project.requiredSkills.forEach(s => skills.add(s));
+
+    return Array.from(skills);
+  }
+
+  private deriveRequiredRoles(_project: Project, requirements: string[]): string[] {
+    const roles = new Set<string>();
+
+    requirements.forEach(req => {
+      const rl = req.toLowerCase();
+      if (rl.includes('frontend')) roles.add('Frontend Developer');
+      if (rl.includes('backend')) roles.add('Backend Developer');
+      if (rl.includes('database')) roles.add('Database Developer');
+      if (rl.includes('auth') || rl.includes('security')) roles.add('Security Engineer');
+      if (rl.includes('deploy') || rl.includes('devops')) roles.add('DevOps Engineer');
+      if (rl.includes('ai') || rl.includes('ml')) roles.add('AI/ML Engineer');
+      if (rl.includes('mobile')) roles.add('Mobile Developer');
+      if (rl.includes('test') || rl.includes('qa')) roles.add('Testing / QA');
+      if (rl.includes('ui') || rl.includes('ux')) roles.add('UI/UX Designer');
+      if (rl.includes('documentation')) roles.add('Documentation');
+    });
+
+    if (roles.size === 0) {
+      roles.add('Developer');
     }
 
-    return insights;
+    return Array.from(roles);
   }
 }
 

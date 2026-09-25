@@ -11,9 +11,8 @@ import {
   User as UserIcon,
   LogOut,
   Settings,
-  HelpCircle,
-  GraduationCap,
-  ShieldAlert
+  ShieldAlert,
+  ShieldCheck
 } from 'lucide-react';
 import { Avatar } from '../common/Avatar';
 import { Badge } from '../common/Badge';
@@ -23,6 +22,7 @@ export const Header: React.FC = () => {
   const {
     currentUser,
     setCurrentUserRole,
+    logout,
     theme,
     setTheme,
     brandingConfig,
@@ -39,30 +39,30 @@ export const Header: React.FC = () => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const roles: { role: UserRole; label: string }[] = [
-    { role: 'STAFF_COORDINATOR', label: 'Staff Coordinator' },
-    { role: 'TEAM_LEADER', label: 'Team Leader (Alice)' },
-    { role: 'TEAM_MEMBER', label: 'Team Member (Bob)' },
-    { role: 'DEPARTMENT_HEAD', label: 'Department Head' }
+  const roles: { role: UserRole; label: string; desc: string }[] = [
+    { role: 'ADMIN', label: '1. Admin Authority', desc: 'Manage Authorized Emails' },
+    { role: 'TEACHER', label: '2. Faculty / Teacher', desc: 'Create Projects & Form Teams' },
+    { role: 'STUDENT', label: '3. Verified Student', desc: 'Workspace & Work Submissions' }
   ];
 
   const handleLogout = () => {
+    logout();
     navigate('/login');
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between transition-colors">
+    <header className="sticky top-0 z-30 h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 flex items-center justify-between transition-colors text-white">
       {/* Brand & Platform */}
       <div className="flex items-center gap-4">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white dark:bg-indigo-600 font-bold flex items-center justify-center text-xs tracking-wider shadow-sm group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 font-bold flex items-center justify-center text-xs tracking-wider shadow-sm group-hover:scale-105 transition-transform text-white">
             {brandingConfig.logoText}
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-none tracking-tight">
+            <h1 className="text-sm font-bold text-white leading-none tracking-tight">
               {brandingConfig.platformName}
             </h1>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+            <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
               {brandingConfig.collegeName}
             </p>
           </div>
@@ -73,13 +73,13 @@ export const Header: React.FC = () => {
       <div className="flex-1 max-w-md mx-6 hidden md:block">
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
-          className="w-full flex items-center justify-between px-3.5 py-2 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 text-slate-500 dark:text-slate-400 rounded-lg text-xs transition-colors border border-slate-200/60 dark:border-slate-700/60"
+          className="w-full flex items-center justify-between px-3.5 py-2 bg-slate-950/80 hover:bg-slate-800/80 text-slate-400 rounded-lg text-xs transition-colors border border-slate-800"
         >
           <div className="flex items-center gap-2">
             <Search className="w-4 h-4 text-slate-400" />
-            <span>Search teams, students, projects, tasks...</span>
+            <span>Search projects, students, skills...</span>
           </div>
-          <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-500">
+          <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-900 border border-slate-700 rounded text-slate-400">
             Ctrl K
           </kbd>
         </button>
@@ -91,17 +91,17 @@ export const Header: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setShowRoleSelector(!showRoleSelector)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold hover:bg-indigo-100 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 text-xs font-semibold hover:bg-indigo-900/60 transition-colors"
           >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">{currentUser.role.replace('_', ' ')}</span>
+            <ShieldAlert className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden lg:inline">{currentUser.role}</span>
             <ChevronDown className="w-3 h-3 opacity-60" />
           </button>
 
           {showRoleSelector && (
-            <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-xs">
+            <div className="absolute right-0 mt-2 w-64 bg-slate-900 rounded-xl shadow-2xl border border-slate-800 py-2 z-50 text-xs">
               <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Switch Demo Persona
+                Switch Evaluation Persona
               </div>
               {roles.map((r) => (
                 <button
@@ -109,18 +109,17 @@ export const Header: React.FC = () => {
                   onClick={() => {
                     setCurrentUserRole(r.role);
                     setShowRoleSelector(false);
-                    if (r.role === 'STAFF_COORDINATOR' || r.role === 'DEPARTMENT_HEAD') {
-                      navigate('/dashboard');
-                    } else {
-                      navigate('/teams/team-alpha');
-                    }
+                    navigate('/dashboard');
                   }}
-                  className={`w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between ${
-                    currentUser.role === r.role ? 'font-bold text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'
+                  className={`w-full text-left px-3 py-2.5 hover:bg-slate-800 flex items-start justify-between ${
+                    currentUser.role === r.role ? 'bg-indigo-950/50 text-indigo-300 font-bold' : 'text-slate-300'
                   }`}
                 >
-                  <span>{r.label}</span>
-                  {currentUser.role === r.role && <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />}
+                  <div>
+                    <span className="block">{r.label}</span>
+                    <span className="text-[10px] text-slate-400 font-normal">{r.desc}</span>
+                  </div>
+                  {currentUser.role === r.role && <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1" />}
                 </button>
               ))}
             </div>
@@ -129,13 +128,13 @@ export const Header: React.FC = () => {
 
         {/* AI Status Indicator */}
         <Badge variant="ai" size="sm" icon={<Sparkles className="w-3 h-3 text-cyan-400 hidden sm:inline" />}>
-          <span className="hidden sm:inline">AI Telemetry Active</span>
+          <span className="hidden sm:inline">AI Active</span>
         </Badge>
 
         {/* Theme Toggle */}
         <button
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-          className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
           title="Toggle Dark / Light Mode"
         >
           {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -145,7 +144,7 @@ export const Header: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
@@ -154,35 +153,44 @@ export const Header: React.FC = () => {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-xs font-bold text-slate-900 dark:text-white">Notifications</span>
-                <span className="text-[10px] text-indigo-500 font-medium">{unreadCount} new</span>
+            <div className="absolute right-0 mt-2 w-80 bg-slate-900 rounded-xl shadow-2xl border border-slate-800 py-2 z-50">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800">
+                <span className="text-xs font-bold text-white">Notifications</span>
+                <span className="text-[10px] text-indigo-400 font-medium">{unreadCount} unread</span>
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-                {notifications.slice(0, 5).map((n) => (
-                  <div
-                    key={n.id}
-                    onClick={() => {
-                      markNotificationRead(n.id);
-                      if (n.actionUrl) navigate(n.actionUrl);
-                      setShowNotifications(false);
-                    }}
-                    className={`p-3 text-xs hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer ${
-                      !n.read ? 'bg-indigo-50/40 dark:bg-indigo-950/20' : ''
-                    }`}
-                  >
-                    <div className="font-semibold text-slate-900 dark:text-white">{n.title}</div>
-                    <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">{n.description}</p>
-                    <span className="text-[9px] text-slate-400 mt-1 block">{n.timestamp}</span>
-                  </div>
-                ))}
+              <div className="max-h-72 overflow-y-auto divide-y divide-slate-800/60">
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-500">No notifications</div>
+                ) : (
+                  notifications.slice(0, 5).map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => {
+                        markNotificationRead(n.id);
+                        if (n.actionUrl) {
+                          const target = n.actionUrl.replace('/projects/', '/teams/');
+                          navigate(target);
+                        }
+                        setShowNotifications(false);
+                      }}
+                      className={`p-3 text-xs hover:bg-slate-800/50 cursor-pointer ${
+                        !n.read ? 'bg-indigo-950/20' : ''
+                      }`}
+                    >
+                      <div className="font-semibold text-white">{n.title}</div>
+                      <p className="text-slate-400 text-[11px] mt-0.5 line-clamp-2">{n.description}</p>
+                      <span className="text-[9px] text-slate-500 mt-1 block">
+                        {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
-              <div className="p-2 text-center border-t border-slate-100 dark:border-slate-800">
+              <div className="p-2 text-center border-t border-slate-800">
                 <Link
                   to="/notifications"
                   onClick={() => setShowNotifications(false)}
-                  className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="text-[11px] font-semibold text-indigo-400 hover:underline"
                 >
                   View All Notifications
                 </Link>
@@ -195,46 +203,49 @@ export const Header: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-800 transition-colors"
           >
             <Avatar src={currentUser.avatar} name={currentUser.name} size="sm" isOnline />
             <div className="text-left hidden lg:block">
-              <span className="block text-xs font-semibold text-slate-900 dark:text-white leading-tight">
+              <span className="block text-xs font-semibold text-white leading-tight">
                 {currentUser.name}
               </span>
-              <span className="block text-[10px] text-slate-500 dark:text-slate-400">
-                {currentUser.department}
+              <span className="block text-[10px] text-slate-400">
+                {currentUser.role}
               </span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden lg:block" />
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-xs">
-              <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
-                <div className="font-bold text-slate-900 dark:text-white">{currentUser.name}</div>
-                <div className="text-slate-500 text-[11px]">{currentUser.email}</div>
+            <div className="absolute right-0 mt-2 w-56 bg-slate-900 rounded-xl shadow-2xl border border-slate-800 py-1.5 z-50 text-xs">
+              <div className="px-4 py-2 border-b border-slate-800">
+                <div className="font-bold text-white">{currentUser.name}</div>
+                <div className="text-slate-400 text-[11px]">{currentUser.email}</div>
+                {currentUser.studentId && (
+                  <div className="text-indigo-400 font-mono text-[10px] mt-0.5">{currentUser.studentId}</div>
+                )}
               </div>
               <Link
                 to="/profile"
                 onClick={() => setShowProfileMenu(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:bg-slate-800"
               >
                 <UserIcon className="w-4 h-4 text-slate-400" />
-                <span>My Academic Profile</span>
+                <span>My Profile</span>
               </Link>
               <Link
                 to="/settings"
                 onClick={() => setShowProfileMenu(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:bg-slate-800"
               >
                 <Settings className="w-4 h-4 text-slate-400" />
                 <span>Platform Settings</span>
               </Link>
-              <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+              <div className="border-t border-slate-800 my-1" />
               <button
                 onClick={handleLogout}
-                className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-rose-400 hover:bg-rose-950/40"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>

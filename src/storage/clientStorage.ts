@@ -1,34 +1,34 @@
 import {
-  Team,
-  Task,
-  Discussion,
-  DocumentItem,
-  CollaborationGap,
-  AIInsight,
-  StudentProfile,
-  MemberContribution,
-  CollaborationRequest,
-  NotificationItem,
-  ActivityLog,
   User,
+  Project,
+  ProjectDocument,
+  StudentContribution,
+  StudentProfile,
+  NotificationItem,
+  Message,
+  CollaborationRequest,
+  ActivityLog,
+  AuthorizedEmail,
+  AIAnalysisResult,
   CollegeBrandingConfig
 } from '../types';
 
-import { INITIAL_BRANDING, INITIAL_USERS } from '../mock/initialData';
+import { INITIAL_BRANDING } from '../mock/initialData';
 
 const KEYS = {
-  BRANDING: 'apex_branding_v2',
-  USERS: 'apex_users_v2',
-  TEAMS: 'apex_teams_v2',
-  TASKS: 'apex_tasks_v2',
-  DISCUSSIONS: 'apex_discussions_v2',
-  DOCUMENTS: 'apex_documents_v2',
-  GAPS: 'apex_gaps_v2',
-  INSIGHTS: 'apex_insights_v2',
-  PROFILES: 'apex_profiles_v2',
-  REQUESTS: 'apex_requests_v2',
-  NOTIFICATIONS: 'apex_notifications_v2',
-  LOGS: 'apex_logs_v2'
+  BRANDING: 'startx_branding_v3',
+  CURRENT_USER: 'startx_current_user_v3',
+  USERS: 'startx_users_v3',
+  AUTHORIZED_EMAILS: 'startx_authorized_emails_v3',
+  PROJECTS: 'startx_projects_v3',
+  PROJECT_DOCUMENTS: 'startx_project_documents_v3',
+  CONTRIBUTIONS: 'startx_contributions_v3',
+  PROFILES: 'startx_profiles_v3',
+  NOTIFICATIONS: 'startx_notifications_v3',
+  MESSAGES: 'startx_messages_v3',
+  REQUESTS: 'startx_requests_v3',
+  LOGS: 'startx_logs_v3',
+  AI_ANALYSES: 'startx_ai_analyses_v3'
 };
 
 class ClientStorage {
@@ -50,7 +50,7 @@ class ClientStorage {
     }
   }
 
-  // System Configuration (Starts with default branding & system users)
+  // System Configuration
   getBranding(): CollegeBrandingConfig {
     return this.getStorage<CollegeBrandingConfig>(KEYS.BRANDING, INITIAL_BRANDING);
   }
@@ -59,63 +59,61 @@ class ClientStorage {
     this.setStorage(KEYS.BRANDING, config);
   }
 
+  // Users — registered users (starts empty, created through registration)
   getUsers(): User[] {
-    return this.getStorage<User[]>(KEYS.USERS, INITIAL_USERS);
+    return this.getStorage<User[]>(KEYS.USERS, []);
   }
 
   saveUsers(users: User[]): void {
     this.setStorage(KEYS.USERS, users);
   }
 
-  // Business Data Entities — Start EMPTY [] by default unless created by user!
-  getTeams(): Team[] {
-    return this.getStorage<Team[]>(KEYS.TEAMS, []);
+  // Current logged-in user
+  getCurrentUser(): User | null {
+    return this.getStorage<User | null>(KEYS.CURRENT_USER, null);
   }
 
-  saveTeams(teams: Team[]): void {
-    this.setStorage(KEYS.TEAMS, teams);
+  saveCurrentUser(user: User | null): void {
+    this.setStorage(KEYS.CURRENT_USER, user);
   }
 
-  getTasks(): Task[] {
-    return this.getStorage<Task[]>(KEYS.TASKS, []);
+  // Authorized Emails — Admin adds these
+  getAuthorizedEmails(): AuthorizedEmail[] {
+    return this.getStorage<AuthorizedEmail[]>(KEYS.AUTHORIZED_EMAILS, []);
   }
 
-  saveTasks(tasks: Task[]): void {
-    this.setStorage(KEYS.TASKS, tasks);
+  saveAuthorizedEmails(emails: AuthorizedEmail[]): void {
+    this.setStorage(KEYS.AUTHORIZED_EMAILS, emails);
   }
 
-  getDiscussions(): Discussion[] {
-    return this.getStorage<Discussion[]>(KEYS.DISCUSSIONS, []);
+  // Projects — Teacher-created
+  getProjects(): Project[] {
+    return this.getStorage<Project[]>(KEYS.PROJECTS, []);
   }
 
-  saveDiscussions(discussions: Discussion[]): void {
-    this.setStorage(KEYS.DISCUSSIONS, discussions);
+  saveProjects(projects: Project[]): void {
+    this.setStorage(KEYS.PROJECTS, projects);
   }
 
-  getDocuments(): DocumentItem[] {
-    return this.getStorage<DocumentItem[]>(KEYS.DOCUMENTS, []);
+  // Project Documents
+  getProjectDocuments(): ProjectDocument[] {
+    return this.getStorage<ProjectDocument[]>(KEYS.PROJECT_DOCUMENTS, []);
   }
 
-  saveDocuments(docs: DocumentItem[]): void {
-    this.setStorage(KEYS.DOCUMENTS, docs);
+  saveProjectDocuments(docs: ProjectDocument[]): void {
+    this.setStorage(KEYS.PROJECT_DOCUMENTS, docs);
   }
 
-  getGaps(): CollaborationGap[] {
-    return this.getStorage<CollaborationGap[]>(KEYS.GAPS, []);
+  // Student Contributions
+  getContributions(): StudentContribution[] {
+    return this.getStorage<StudentContribution[]>(KEYS.CONTRIBUTIONS, []);
   }
 
-  saveGaps(gaps: CollaborationGap[]): void {
-    this.setStorage(KEYS.GAPS, gaps);
+  saveContributions(contributions: StudentContribution[]): void {
+    this.setStorage(KEYS.CONTRIBUTIONS, contributions);
   }
 
-  getInsights(): AIInsight[] {
-    return this.getStorage<AIInsight[]>(KEYS.INSIGHTS, []);
-  }
-
-  saveInsights(insights: AIInsight[]): void {
-    this.setStorage(KEYS.INSIGHTS, insights);
-  }
-
+  // Student Profiles
   getStudentProfiles(): Record<string, StudentProfile> {
     return this.getStorage<Record<string, StudentProfile>>(KEYS.PROFILES, {});
   }
@@ -124,14 +122,7 @@ class ClientStorage {
     this.setStorage(KEYS.PROFILES, profiles);
   }
 
-  getRequests(): CollaborationRequest[] {
-    return this.getStorage<CollaborationRequest[]>(KEYS.REQUESTS, []);
-  }
-
-  saveRequests(reqs: CollaborationRequest[]): void {
-    this.setStorage(KEYS.REQUESTS, reqs);
-  }
-
+  // Notifications
   getNotifications(): NotificationItem[] {
     return this.getStorage<NotificationItem[]>(KEYS.NOTIFICATIONS, []);
   }
@@ -140,6 +131,25 @@ class ClientStorage {
     this.setStorage(KEYS.NOTIFICATIONS, notifs);
   }
 
+  // Messages
+  getMessages(): Message[] {
+    return this.getStorage<Message[]>(KEYS.MESSAGES, []);
+  }
+
+  saveMessages(messages: Message[]): void {
+    this.setStorage(KEYS.MESSAGES, messages);
+  }
+
+  // Collaboration Requests
+  getRequests(): CollaborationRequest[] {
+    return this.getStorage<CollaborationRequest[]>(KEYS.REQUESTS, []);
+  }
+
+  saveRequests(reqs: CollaborationRequest[]): void {
+    this.setStorage(KEYS.REQUESTS, reqs);
+  }
+
+  // Activity Logs
   getActivityLogs(): ActivityLog[] {
     return this.getStorage<ActivityLog[]>(KEYS.LOGS, []);
   }
@@ -148,10 +158,19 @@ class ClientStorage {
     this.setStorage(KEYS.LOGS, logs);
   }
 
-  // Developer Reset Mechanism — Purges all business records back to 0
+  // AI Analyses
+  getAIAnalyses(): AIAnalysisResult[] {
+    return this.getStorage<AIAnalysisResult[]>(KEYS.AI_ANALYSES, []);
+  }
+
+  saveAIAnalyses(analyses: AIAnalysisResult[]): void {
+    this.setStorage(KEYS.AI_ANALYSES, analyses);
+  }
+
+  // Developer Reset — Purges all business records back to 0
   resetAllBusinessData(): void {
     Object.values(KEYS).forEach((k) => {
-      if (k !== KEYS.BRANDING && k !== KEYS.USERS) {
+      if (k !== KEYS.BRANDING) {
         localStorage.removeItem(k);
       }
     });

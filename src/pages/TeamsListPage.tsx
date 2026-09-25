@@ -1,44 +1,55 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Users, Plus, Search, Filter, Sparkles, ChevronRight } from 'lucide-react';
+import { FolderGit2, Plus, Search, ChevronRight, Users, Calendar } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
-import { ProgressBar } from '../components/common/ProgressBar';
+import { EmptyState } from '../components/common/EmptyState';
+import { PREDEFINED_CATEGORIES } from '../mock/initialData';
 
 export const TeamsListPage: React.FC = () => {
-  const { teams } = useApp();
+  const { currentUser, projects } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const navigate = useNavigate();
 
-  const filteredTeams = teams.filter((t) => {
-    const matchesQuery = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.projectTitle.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = categoryFilter === 'All' || t.category === categoryFilter;
+  const isTeacher = currentUser.role === 'TEACHER';
+
+  const filteredProjects = projects.filter((p) => {
+    const matchesQuery =
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.problemStatement.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCat = categoryFilter === 'All' || p.category === categoryFilter;
     return matchesQuery && matchesCat;
   });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+      {/* Top Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 text-white">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-500" /> Registered Student Project Teams
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <FolderGit2 className="w-5 h-5 text-indigo-400" /> Academic Projects Directory
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Browse active engineering teams, progress telemetry, and health scores across departments.
+          <p className="text-xs text-slate-400 mt-1">
+            {isTeacher
+              ? 'Manage and monitor all student project teams under your supervision.'
+              : 'View academic projects and team rosters across the department.'}
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => navigate('/teams/new')}
-          icon={<Plus className="w-4 h-4" />}
-        >
-          Create Project Team
-        </Button>
+        {isTeacher && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate('/teams/new')}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Create Project
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -47,62 +58,98 @@ export const TeamsListPage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           <input
             type="text"
-            placeholder="Search teams by name or project title..."
+            placeholder="Search projects by ID, name, or keywords..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none"
+            className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
 
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none"
+          className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           <option value="All">All Categories</option>
-          <option value="Full Stack Web Application">Full Stack Web Application</option>
-          <option value="AI / Machine Learning">AI / Machine Learning</option>
-          <option value="IoT & Analytics">IoT & Analytics</option>
+          {PREDEFINED_CATEGORIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
         </select>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTeams.map((team) => (
-          <Card
-            key={team.id}
-            onClick={() => navigate(`/teams/${team.id}`)}
-            className="p-5 flex flex-col justify-between cursor-pointer hover:border-indigo-400 group"
-          >
-            <div className="space-y-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-indigo-600 transition-colors">
-                    {team.name}
-                  </h3>
-                  <span className="text-xs text-slate-500 font-medium block">{team.projectTitle}</span>
+      {filteredProjects.length === 0 ? (
+        <div className="py-12">
+          <EmptyState
+            icon={<FolderGit2 className="w-12 h-12 text-slate-500" />}
+            title="No Projects Found"
+            description={
+              isTeacher
+                ? "You haven't created any projects yet. Click 'Create Project' to set up a project and assign students."
+                : "No projects match your filter criteria or you haven't been assigned to a project yet."
+            }
+            action={
+              isTeacher ? (
+                <Button variant="primary" onClick={() => navigate('/teams/new')} icon={<Plus className="w-4 h-4" />}>
+                  Create Project
+                </Button>
+              ) : undefined
+            }
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map((proj) => {
+            const memberCount = (proj.teamLeaderId ? 1 : 0) + proj.memberIds.length;
+            return (
+              <Card
+                key={proj.id}
+                onClick={() => navigate(`/teams/${proj.id}`)}
+                className="p-5 flex flex-col justify-between cursor-pointer hover:border-indigo-500/50 group transition-all"
+              >
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <span className="font-mono text-[10px] text-indigo-400 font-bold block mb-0.5">
+                        {proj.id}
+                      </span>
+                      <h3 className="font-bold text-white text-base group-hover:text-indigo-400 transition-colors line-clamp-1">
+                        {proj.name}
+                      </h3>
+                    </div>
+                    <Badge variant={proj.status === 'ACTIVE' ? 'success' : 'warning'}>
+                      {proj.status}
+                    </Badge>
+                  </div>
+
+                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                    {proj.description || proj.problemStatement}
+                  </p>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">
+                      {proj.category}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300">
+                      {proj.duration}
+                    </span>
+                  </div>
                 </div>
-                <Badge variant={team.healthScore >= 80 ? 'success' : team.healthScore >= 60 ? 'warning' : 'error'}>
-                  Health: {team.healthScore}/100
-                </Badge>
-              </div>
 
-              <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                {team.problemStatement}
-              </p>
-
-              <ProgressBar value={team.progress} label="Sprint Progress" size="sm" />
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">{team.memberIds.length} Members</span>
-              <span className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                View Intelligence <ChevronRight className="w-3.5 h-3.5" />
-              </span>
-            </div>
-          </Card>
-        ))}
-      </div>
+                <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-slate-500" />
+                    {memberCount} Assigned Students
+                  </span>
+                  <span className="text-indigo-400 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                    Workspace <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

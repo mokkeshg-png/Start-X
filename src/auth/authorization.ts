@@ -1,9 +1,13 @@
-import { User } from '../types';
+import { User, Project } from '../types';
 import { PermissionKey, ResourceObject } from './auth.types';
 import { ROLE_PERMISSIONS } from './permissions';
 
+/**
+ * Core authorization function — default-deny behavior.
+ * Checks: CURRENT USER + ROLE + RESOURCE + OWNERSHIP + PROJECT MEMBERSHIP + ACTION = ALLOW/DENY
+ */
 export const can = (
-  user: User,
+  user: User | null,
   permission: PermissionKey,
   resource?: ResourceObject
 ): boolean => {
@@ -19,81 +23,91 @@ export const can = (
   if (!resource) return true;
 
   // 2. Resource ownership & Scope enforcement
-  if (user.role === 'STAFF_COORDINATOR') {
-    // Staff Coordinator has monitoring & management oversight within assigned scope
-    return true;
-  }
-
-  if (user.role === 'DEPARTMENT_HEAD') {
-    // Department Head has institutional aggregate oversight
-    if (resource.type === 'profile' && resource.ownerId && resource.ownerId !== user.id) {
-      // Cannot view individual private student notes/fields
-      return permission !== 'profile:view-private-staff';
+  if (user.role === 'ADMIN') {
+    // Admin has system-level access but NOT student/teacher project editing
+    if (permission.startsWith('teacher:') || permission.startsWith('student:')) {
+      return false;
     }
     return true;
   }
 
-  // Student roles (TEAM_LEADER & TEAM_MEMBER)
-  if (user.role === 'TEAM_LEADER' || user.role === 'TEAM_MEMBER') {
-    // Cross-team isolation: student must belong to the requested team
-    if (resource.teamId) {
-      // Student users (Alice, Bob, Carol, John, Jane) belong to 'team-alpha'
-      const userAssignedTeamIds = ['team-alpha'];
-      if (!userAssignedTeamIds.includes(resource.teamId)) {
-        return false; // Deny access to other teams' private resources (e.g. team-beta, team-gamma)
+  if (user.role === 'TEACHER') {
+    // Teacher can only manage their own projects
+    if (resource.projectId && resource.teacherId) {
+      if (resource.teacherId !== user.id) {
+        return false; // Cannot access another teacher's project
       }
     }
+    return true;
+  }
 
-    // Ownership check for task edits
-    if (permission === 'task:edit-own' && resource.assignedToId) {
-      if (resource.assignedToId !== user.id && user.role !== 'TEAM_LEADER') {
+  if (user.role === 'STUDENT') {
+    // Students can only access own profile and assigned project data
+    if (resource.type === 'profile' && resource.ownerId) {
+      if (resource.ownerId !== user.id && permission !== 'profile:view-public' && permission !== 'student:view-teammate-profile') {
         return false;
       }
     }
 
-    // Student profile privacy
-    if (permission === 'profile:view-private-staff') {
-      return false; // Students cannot view internal staff notes or confidential assessments
+    // Students can only edit/delete their own contributions
+    if (resource.type === 'contribution' && resource.ownerId) {
+      if (resource.ownerId !== user.id) {
+        return false;
+      }
     }
+
+    return true;
   }
 
   return true;
 };
 
 // Convenience Authorization Helpers
-export const canViewTeam = (user: User, teamId: string): boolean => {
-  if (user.role === 'STAFF_COORDINATOR' || user.role === 'DEPARTMENT_HEAD') return true;
-  return can(user, 'team:view-own', { type: 'team', teamId });
+export const canViewProject = (user: User, project: Project): boolean => {
+  if (user.role === 'ADMIN') return true;
+  if (user.role === 'TEACHER') return project.teacherId === user.id;
+  if (user.role === 'STUDENT') {
+    return project.teamLeaderId === user.id || project.memberIds.includes(user.id);
+  }
+  return false;
 };
 
-export const canCreateTeam = (user: User): boolean => {
-  return can(user, 'team:create');
+export const canManageProject = (user: User, project: Project): boolean => {
+  return user.role === 'TEACHER' && project.teacherId === user.id;
 };
 
-export const canEditTeam = (user: User, teamId: string): boolean => {
-  return can(user, 'team:edit', { type: 'team', teamId });
+export const canCreateProject = (user: User): boolean => {
+  return can(user, 'teacher:create-project');
 };
 
-export const canManageMembers = (user: User, teamId: string): boolean => {
-  return can(user, 'member:add', { type: 'team', teamId });
+export const canEditProject = (user: User, projectTeacherId: string): boolean => {
+  return can(user, 'teacher:edit-project', { type: 'project', teacherId: projectTeacherId });
 };
 
-export const canAssignRoles = (user: User, teamId: string): boolean => {
-  return can(user, 'member:assign-role', { type: 'team', teamId });
+export const canManageTeam = (user: User, projectTeacherId: string): boolean => {
+  return can(user, 'teacher:add-team-member', { type: 'project', teacherId: projectTeacherId });
 };
 
-export const canCreateTask = (user: User, teamId: string): boolean => {
-  return can(user, 'task:create', { type: 'team', teamId });
+export const canAssignRoles = (user: User, projectTeacherId: string): boolean => {
+  return can(user, 'teacher:assign-role', { type: 'project', teacherId: projectTeacherId });
 };
 
-export const canResolveGap = (user: User, gapTeamId: string): boolean => {
-  return can(user, 'gap:resolve', { type: 'gap', teamId: gapTeamId });
+export const canUploadWork = (user: User, ownerId: string): boolean => {
+  return can(user, 'student:upload-own-work', { type: 'contribution', ownerId });
 };
 
-export const canViewStaffAnalytics = (user: User): boolean => {
-  return can(user, 'contribution:view-staff-analytics');
+export const canDeleteWork = (user: User, ownerId: string): boolean => {
+  return can(user, 'student:delete-own-work', { type: 'contribution', ownerId });
 };
 
-export const canViewChat = (user: User, teamId: string): boolean => {
-  return can(user, 'chat:access-own-team', { type: 'discussion', teamId });
+export const canRunAIAnalysis = (user: User): boolean => {
+  return can(user, 'teacher:run-ai-analysis');
+};
+
+export const canViewAdminDashboard = (user: User): boolean => {
+  return can(user, 'admin:view-dashboard');
+};
+
+export const canManageEmails = (user: User): boolean => {
+  return can(user, 'admin:manage-emails');
 };

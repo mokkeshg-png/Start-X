@@ -11,11 +11,10 @@ export const AccessRestrictedPage: React.FC<{ reason?: string }> = ({ reason }) 
   const { currentUser } = useApp();
 
   const getDashboardPath = () => {
-    if (currentUser.role === 'STAFF_COORDINATOR' || currentUser.role === 'DEPARTMENT_HEAD') {
-      return '/dashboard';
-    }
-    return '/teams/team-alpha';
+    return '/dashboard';
   };
+
+  const roleLabel = currentUser?.role || 'UNKNOWN';
 
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-8 animate-in fade-in duration-200">
@@ -28,11 +27,11 @@ export const AccessRestrictedPage: React.FC<{ reason?: string }> = ({ reason }) 
       </div>
 
       <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-        Unauthorized Operation / Scope Constraint
+        Unauthorized Access
       </h1>
 
       <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mt-2 leading-relaxed">
-        {reason || `Your current role (${currentUser.role.replace('_', ' ')}) or object scope does not possess authorization to view this resource.`}
+        {reason || `Your current role (${roleLabel}) does not have permission to access this resource.`}
       </p>
 
       <div className="flex items-center gap-3 mt-6">
@@ -51,7 +50,7 @@ export const AccessRestrictedPage: React.FC<{ reason?: string }> = ({ reason }) 
           onClick={() => navigate(getDashboardPath())}
           icon={<LayoutDashboard className="w-3.5 h-3.5" />}
         >
-          Return to My Dashboard
+          Return to Dashboard
         </Button>
       </div>
     </div>

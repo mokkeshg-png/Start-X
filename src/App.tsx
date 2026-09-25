@@ -38,6 +38,8 @@ export const App: React.FC = () => {
               </AppShell>
             }
           />
+
+          {/* Projects / Teams list */}
           <Route
             path="/teams"
             element={
@@ -47,15 +49,37 @@ export const App: React.FC = () => {
             }
           />
           <Route
+            path="/projects"
+            element={
+              <AppShell>
+                <TeamsListPage />
+              </AppShell>
+            }
+          />
+
+          {/* Teacher Create Project */}
+          <Route
             path="/teams/new"
             element={
               <AppShell>
-                <ProtectedRoute permission="team:create">
+                <ProtectedRoute permission="teacher:create-project">
                   <TeamCreationWizardPage />
                 </ProtectedRoute>
               </AppShell>
             }
           />
+          <Route
+            path="/projects/new"
+            element={
+              <AppShell>
+                <ProtectedRoute permission="teacher:create-project">
+                  <TeamCreationWizardPage />
+                </ProtectedRoute>
+              </AppShell>
+            }
+          />
+
+          {/* Project Workspace */}
           <Route
             path="/teams/:id"
             element={
@@ -64,26 +88,18 @@ export const App: React.FC = () => {
               </AppShell>
             }
           />
+          <Route
+            path="/projects/:id"
+            element={
+              <AppShell>
+                <TeamDetailPage />
+              </AppShell>
+            }
+          />
 
-          {/* Convenience tab routes */}
+          {/* Convenience Workspace tab aliases */}
           <Route
             path="/contributions"
-            element={
-              <AppShell>
-                <TeamDetailPage />
-              </AppShell>
-            }
-          />
-          <Route
-            path="/discussions"
-            element={
-              <AppShell>
-                <TeamDetailPage />
-              </AppShell>
-            }
-          />
-          <Route
-            path="/tasks"
             element={
               <AppShell>
                 <TeamDetailPage />
@@ -98,27 +114,13 @@ export const App: React.FC = () => {
               </AppShell>
             }
           />
+
+          {/* Student Profile */}
           <Route
-            path="/knowledge-exchange"
+            path="/profile"
             element={
               <AppShell>
-                <TeamDetailPage />
-              </AppShell>
-            }
-          />
-          <Route
-            path="/insights"
-            element={
-              <AppShell>
-                <TeamDetailPage />
-              </AppShell>
-            }
-          />
-          <Route
-            path="/gaps"
-            element={
-              <AppShell>
-                <TeamDetailPage />
+                <StudentProfilePage />
               </AppShell>
             }
           />
@@ -130,16 +132,26 @@ export const App: React.FC = () => {
               </AppShell>
             }
           />
+
+          {/* Collaborator Discovery */}
           <Route
-            path="/profile"
+            path="/find-teammates"
             element={
               <AppShell>
-                <StudentProfilePage />
+                <FindTeammatesPage />
               </AppShell>
             }
           />
           <Route
-            path="/find-teammates"
+            path="/find-students"
+            element={
+              <AppShell>
+                <FindTeammatesPage />
+              </AppShell>
+            }
+          />
+          <Route
+            path="/find-collaborators"
             element={
               <AppShell>
                 <FindTeammatesPage />
@@ -154,16 +166,18 @@ export const App: React.FC = () => {
               </AppShell>
             }
           />
+
+          {/* Project Chat */}
           <Route
             path="/chat"
             element={
               <AppShell>
-                <ProtectedRoute permission="chat:access-own-team">
-                  <PrivateChatPage />
-                </ProtectedRoute>
+                <PrivateChatPage />
               </AppShell>
             }
           />
+
+          {/* Notifications */}
           <Route
             path="/notifications"
             element={
@@ -172,6 +186,8 @@ export const App: React.FC = () => {
               </AppShell>
             }
           />
+
+          {/* Audit Logs */}
           <Route
             path="/audit"
             element={
@@ -182,6 +198,8 @@ export const App: React.FC = () => {
               </AppShell>
             }
           />
+
+          {/* Platform Settings */}
           <Route
             path="/settings"
             element={
@@ -191,7 +209,7 @@ export const App: React.FC = () => {
             }
           />
 
-          {/* Catch-all fallback */}
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

@@ -12,22 +12,19 @@ import {
   Brain,
   CheckCircle2,
   FileCheck2,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
-import { Badge } from '../components/common/Badge';
+import { UserRole } from '../types';
 
 export const LandingPage: React.FC = () => {
   const { brandingConfig, setCurrentUserRole } = useApp();
   const navigate = useNavigate();
 
-  const handleDemoAccess = (role: 'STAFF_COORDINATOR' | 'TEAM_LEADER' | 'TEAM_MEMBER' | 'DEPARTMENT_HEAD') => {
+  const handleDemoAccess = (role: UserRole) => {
     setCurrentUserRole(role);
-    if (role === 'STAFF_COORDINATOR' || role === 'DEPARTMENT_HEAD') {
-      navigate('/dashboard');
-    } else {
-      navigate('/teams/team-alpha');
-    }
+    navigate('/dashboard');
   };
 
   return (
@@ -54,13 +51,13 @@ export const LandingPage: React.FC = () => {
             Portal Sign In
           </Link>
           <Button
-            variant="ai"
+            variant="primary"
             size="sm"
-            onClick={() => handleDemoAccess('STAFF_COORDINATOR')}
+            onClick={() => handleDemoAccess('ADMIN')}
             icon={<ArrowRight className="w-4 h-4" />}
             iconPosition="right"
           >
-            Coordinator Demo
+            Institutional Portal
           </Button>
         </div>
       </header>
@@ -69,70 +66,70 @@ export const LandingPage: React.FC = () => {
       <section className="relative py-20 px-8 max-w-6xl mx-auto text-center flex flex-col items-center">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-700/50 text-indigo-300 text-xs font-semibold mb-6 ai-glow-border">
           <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
-          <span>Official Academic Intelligence Portal v2.4</span>
+          <span>Official Academic Project Management System v3.0</span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight max-w-4xl">
-          AI-Powered Student Project Collaboration & <span className="ai-gradient-text">Intelligence Platform</span>
+          College Project Formation & <span className="ai-gradient-text">AI Compatibility Platform</span>
         </h1>
 
         <p className="mt-6 text-base sm:text-lg text-slate-400 max-w-2xl leading-relaxed">
-          Empowering engineering faculty to monitor student team telemetry in real time while providing students with evidence-based skill verification, automated gap detection, and AI team formation.
+          Admin-controlled authorization, faculty-led project creation with uploaded PRD requirement analysis, deterministic team compatibility matching, and dedicated student collaboration workspaces.
         </p>
 
         {/* Demo Roles Quick Launch Card */}
         <div className="mt-10 p-6 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-2xl max-w-3xl w-full">
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center justify-center gap-2">
             <ShieldCheck className="w-4 h-4 text-indigo-400" />
-            Select Institutional Persona for Live Hackathon Demonstration
+            Live System Personas — 3 Strict Authentication Roles
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
-              onClick={() => handleDemoAccess('STAFF_COORDINATOR')}
+              onClick={() => handleDemoAccess('ADMIN')}
               className="p-4 rounded-xl bg-slate-800/80 hover:bg-indigo-950/60 border border-slate-700 hover:border-indigo-500/60 text-left transition-all group cursor-pointer"
             >
               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs mb-2">
-                SC
+                AD
               </div>
               <div className="font-bold text-sm text-white group-hover:text-indigo-300">
-                Staff Coordinator
+                Institutional Admin
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Dr. Evelyn Vance</p>
+              <p className="text-[11px] text-slate-400 mt-1">Dr. Arthur Pendelton</p>
               <span className="text-[10px] text-indigo-400 font-semibold block mt-2 flex items-center gap-1">
-                Open Coordinator Dashboard <ChevronRight className="w-3 h-3" />
+                Authorized Email Control <ChevronRight className="w-3 h-3" />
               </span>
             </button>
 
             <button
-              onClick={() => handleDemoAccess('TEAM_LEADER')}
+              onClick={() => handleDemoAccess('TEACHER')}
               className="p-4 rounded-xl bg-slate-800/80 hover:bg-purple-950/60 border border-slate-700 hover:border-purple-500/60 text-left transition-all group cursor-pointer"
             >
               <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs mb-2">
-                TL
+                TC
               </div>
               <div className="font-bold text-sm text-white group-hover:text-purple-300">
-                Team Leader
+                Faculty / Teacher
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Alice Johnson (Team Alpha)</p>
+              <p className="text-[11px] text-slate-400 mt-1">Prof. Priya Sharma</p>
               <span className="text-[10px] text-purple-400 font-semibold block mt-2 flex items-center gap-1">
-                Open Team Alpha Intelligence <ChevronRight className="w-3 h-3" />
+                Create & Form Teams <ChevronRight className="w-3 h-3" />
               </span>
             </button>
 
             <button
-              onClick={() => handleDemoAccess('TEAM_MEMBER')}
+              onClick={() => handleDemoAccess('STUDENT')}
               className="p-4 rounded-xl bg-slate-800/80 hover:bg-emerald-950/60 border border-slate-700 hover:border-emerald-500/60 text-left transition-all group cursor-pointer"
             >
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs mb-2">
-                TM
+                ST
               </div>
               <div className="font-bold text-sm text-white group-hover:text-emerald-300">
-                Student Member
+                Verified Student
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Bob Smith (Backend Lead)</p>
+              <p className="text-[11px] text-slate-400 mt-1">Rahul Verma (ID: STU-2026-1042)</p>
               <span className="text-[10px] text-emerald-400 font-semibold block mt-2 flex items-center gap-1">
-                Open Verified Student Profile <ChevronRight className="w-3 h-3" />
+                Project Workspace & Profile <ChevronRight className="w-3 h-3" />
               </span>
             </button>
           </div>
@@ -142,7 +139,7 @@ export const LandingPage: React.FC = () => {
       {/* Capabilities Section */}
       <section className="py-16 px-8 max-w-6xl mx-auto w-full border-t border-slate-800/60">
         <h2 className="text-2xl font-bold text-white text-center mb-12">
-          Academic Project Monitoring & Intelligence Capabilities
+          Academic Project Lifecycle & Verification
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -150,19 +147,19 @@ export const LandingPage: React.FC = () => {
             <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 w-fit mb-4">
               <Brain className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-white">AI Collaboration Gap Detection</h3>
+            <h3 className="text-base font-bold text-white">AI Requirement-Based Compatibility</h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Automatically flags frontend/backend dependency bottlenecks, inactive member contributions, and unresolved technical discussions before project deadlines.
+              Analyzes actual uploaded PRD documents, project problem statements, and real registered student profiles to produce transparent, explainable compatibility reports with missing skill gap alerts.
             </p>
           </div>
 
           <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-left">
             <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 w-fit mb-4">
-              <Network className="w-6 h-6" />
+              <Users className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-white">Knowledge Exchange Network Graph</h3>
+            <h3 className="text-base font-bold text-white">Faculty Team Formation</h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Interactive node-link graph visualizing communication flows, schema updates, API documentation exchanges, and isolated team member warnings.
+              Teachers search real registered students, assign project-level Team Leaders and member roles (predefined or custom), upload project requirement files, and notify assigned students.
             </p>
           </div>
 
@@ -170,9 +167,9 @@ export const LandingPage: React.FC = () => {
             <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 w-fit mb-4">
               <FileCheck2 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-white">Evidence-Based Skill Verification</h3>
+            <h3 className="text-base font-bold text-white">Dedicated Student Workspace</h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Traces student skill proficiencies directly to verified code commits, submitted PRD documents, OpenAPI schemas, and automated test suites.
+              Assigned students receive project notifications, view teammates and roles, submit runtime contributions, collaborate in scoped team chats, and message assigned faculty mentors.
             </p>
           </div>
         </div>
@@ -181,7 +178,7 @@ export const LandingPage: React.FC = () => {
       {/* Footer */}
       <footer className="mt-auto py-8 px-8 border-t border-slate-800 text-center text-xs text-slate-500">
         <p>© 2026 {brandingConfig.collegeName} • Official Digital Technology Platform</p>
-        <p className="mt-1 text-[11px] text-slate-600">Built for Hackathon & Academic Project Demonstration</p>
+        <p className="mt-1 text-[11px] text-slate-600">Enterprise College Project Management Architecture</p>
       </footer>
     </div>
   );

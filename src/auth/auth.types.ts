@@ -2,76 +2,60 @@ import { UserRole } from '../types';
 
 export type ScopeType =
   | 'GLOBAL_SCOPE'
-  | 'DEPARTMENT_SCOPE'
-  | 'ASSIGNED_TEAM_SCOPE'
   | 'OWN_PROFILE_SCOPE'
-  | 'OWN_TASK_SCOPE'
-  | 'OWN_DOCUMENT_SCOPE'
+  | 'OWN_PROJECT_SCOPE'
+  | 'ASSIGNED_PROJECT_SCOPE'
   | 'OWN_CONTRIBUTION_SCOPE'
-  | 'OWN_DISCUSSION_SCOPE';
+  | 'OWN_DOCUMENT_SCOPE';
 
 export type PermissionKey =
-  // Dashboard Permissions
-  | 'dashboard:view-staff'
-  | 'dashboard:view-leader'
-  | 'dashboard:view-member'
-  | 'dashboard:view-department'
-  // Team Permissions
-  | 'team:create'
-  | 'team:view-assigned'
-  | 'team:view-own'
-  | 'team:view-department'
-  | 'team:edit'
-  | 'team:delete'
-  | 'team:export'
-  // Member & Role Permissions
-  | 'member:add'
-  | 'member:remove'
-  | 'member:assign-role'
-  | 'member:view-roster'
-  // Task Permissions
-  | 'task:create'
-  | 'task:edit-any'
-  | 'task:edit-own'
-  | 'task:delete'
-  | 'task:assign'
-  | 'task:change-status'
-  // Document Permissions
-  | 'document:upload'
-  | 'document:view-team'
-  | 'document:view-coordinator-only'
-  | 'document:delete'
-  | 'document:analyze-consistency'
-  // Discussion & Chat Permissions
-  | 'discussion:create'
-  | 'discussion:view'
-  | 'discussion:reply'
-  | 'chat:access-own-team'
-  // Contribution Permissions
-  | 'contribution:view-own'
-  | 'contribution:view-team'
-  | 'contribution:view-staff-analytics'
-  // AI & Gap Permissions
-  | 'ai:run-team-analysis'
-  | 'ai:view-staff-insights'
-  | 'ai:view-student-insights'
-  | 'gap:view'
-  | 'gap:resolve'
-  // Student Profile & Teammate Discovery
+  // Admin Permissions
+  | 'admin:manage-emails'
+  | 'admin:view-dashboard'
+  | 'admin:view-registration-status'
+  | 'audit:view'
+  // Teacher Permissions
+  | 'teacher:view-dashboard'
+  | 'teacher:create-project'
+  | 'teacher:edit-project'
+  | 'teacher:delete-project'
+  | 'teacher:upload-document'
+  | 'teacher:delete-document'
+  | 'teacher:search-students'
+  | 'teacher:assign-team-leader'
+  | 'teacher:add-team-member'
+  | 'teacher:remove-team-member'
+  | 'teacher:assign-role'
+  | 'teacher:run-ai-analysis'
+  | 'teacher:finalize-project'
+  | 'teacher:view-contributions'
+  | 'teacher:view-team-progress'
+  | 'teacher:message-students'
+  // Student Permissions
+  | 'student:view-dashboard'
+  | 'student:view-own-profile'
+  | 'student:edit-own-profile'
+  | 'student:view-assigned-project'
+  | 'student:view-team'
+  | 'student:view-teammate-profile'
+  | 'student:upload-own-work'
+  | 'student:edit-own-work'
+  | 'student:delete-own-work'
+  | 'student:team-chat'
+  | 'student:direct-message'
+  | 'student:mentor-message'
+  | 'student:view-notifications'
+  | 'student:find-collaborators'
+  | 'student:request-collaboration'
+  // Shared Permissions
   | 'profile:edit-own'
   | 'profile:view-public'
-  | 'profile:view-private-staff'
-  | 'teammate:search'
-  | 'collaboration:request'
-  | 'collaboration:respond'
-  // System & Audit Permissions
-  | 'settings:manage'
-  | 'audit:view';
+  | 'notifications:view'
+  | 'settings:manage';
 
 export interface ResourceObject {
-  type: 'team' | 'task' | 'document' | 'discussion' | 'gap' | 'profile' | 'report';
-  teamId?: string;
+  type: 'project' | 'contribution' | 'document' | 'profile' | 'message';
+  projectId?: string;
   ownerId?: string;
-  assignedToId?: string;
-  department?: string;
+  teacherId?: string;
 }
