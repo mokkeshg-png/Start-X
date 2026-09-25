@@ -17,6 +17,7 @@ import java.util.Map;
  * NEVER log the service-role key value.</p>
  */
 @Service
+@SuppressWarnings("null")
 public class SupabaseAdminClient {
 
     private static final Logger log = LoggerFactory.getLogger(SupabaseAdminClient.class);
@@ -45,6 +46,7 @@ public class SupabaseAdminClient {
      * @param role   DB-level role: student | staff | admin
      * @return Supabase auth.users UUID as String
      */
+    @SuppressWarnings("rawtypes")
     public String inviteUser(String email, String role) {
         String url = supabaseUrl + "/auth/v1/invite";
 
@@ -58,8 +60,9 @@ public class SupabaseAdminClient {
 
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Object id = response.getBody().get("id");
+            Map bodyMap = response.getBody();
+            if (response.getStatusCode().is2xxSuccessful() && bodyMap != null) {
+                Object id = bodyMap.get("id");
                 if (id == null) throw new RuntimeException("Supabase invite response missing 'id'");
                 return id.toString();
             }
@@ -98,7 +101,7 @@ public class SupabaseAdminClient {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
         try {
-            restTemplate.exchange(url, HttpMethod.PUT, request, Map.class);
+            restTemplate.exchange(url, HttpMethod.PUT, request, Void.class);
             log.info("Updated app_metadata.role={} for Supabase user {}", dbRole, supabaseUserId);
         } catch (HttpClientErrorException e) {
             log.error("Failed to update app_metadata for {}: {}", supabaseUserId,
@@ -113,6 +116,7 @@ public class SupabaseAdminClient {
     /**
      * Create a user with a default password.
      */
+    @SuppressWarnings("rawtypes")
     public String createUser(String email, String role) {
         String url = supabaseUrl + "/auth/v1/admin/users";
 
@@ -128,8 +132,9 @@ public class SupabaseAdminClient {
 
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Object id = response.getBody().get("id");
+            Map bodyMap = response.getBody();
+            if (response.getStatusCode().is2xxSuccessful() && bodyMap != null) {
+                Object id = bodyMap.get("id");
                 if (id == null) throw new RuntimeException("Supabase create user response missing 'id'");
                 return id.toString();
             }
@@ -146,6 +151,7 @@ public class SupabaseAdminClient {
         throw new RuntimeException("Failed to create user — no ID returned");
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public String getUserIdByEmail(String email) {
         String url = supabaseUrl + "/auth/v1/admin/users";
         HttpHeaders headers = buildAdminHeaders();
@@ -154,8 +160,9 @@ public class SupabaseAdminClient {
             // Wait, this returns an array of users? No, GoTrue GET /admin/users returns a pagination object like:
             // { "users": [...] }
             ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
-            if (response.getBody() != null && response.getBody().containsKey("users")) {
-                java.util.List<Map<String, Object>> users = (java.util.List<Map<String, Object>>) response.getBody().get("users");
+            Map bodyMap = response.getBody();
+            if (bodyMap != null && bodyMap.containsKey("users")) {
+                java.util.List<Map<String, Object>> users = (java.util.List<Map<String, Object>>) bodyMap.get("users");
                 for (Map<String, Object> user : users) {
                     if (email.equalsIgnoreCase((String) user.get("email"))) {
                         return user.get("id").toString();

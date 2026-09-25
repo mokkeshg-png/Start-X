@@ -1,8 +1,6 @@
 package com.startx.entity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 

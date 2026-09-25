@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
  * </pre>
  */
 @Service
+@SuppressWarnings("null")
 public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
