@@ -15,8 +15,55 @@ import {
 
 import { clientStorage } from '../storage/clientStorage';
 import { aiEngine } from './aiEngine';
+import { authService } from './authService';
 
 const simulatedDelay = (ms = 80) => new Promise((res) => setTimeout(res, ms));
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+
+/**
+ * Make an authenticated request to the Spring Boot backend.
+ * Attaches the current Supabase JWT from localStorage.
+ */
+async function backendFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const token = authService.getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {})
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return fetch(`${BACKEND_URL}${path}`, { ...options, headers });
+}
+
+/**
+ * Map a backend AuthorizedEmailDto to the frontend AuthorizedEmail type.
+ */
+function mapBackendEmailDto(dto: Record<string, unknown>): AuthorizedEmail {
+  // Map backend role (STUDENT | TEACHER | ADMIN) to frontend (TEACHER | STUDENT)
+  // ADMIN emails are shown with role 'STUDENT' fallback for display; kept as-is.
+  const role = dto.role === 'ADMIN'
+    ? 'STUDENT'  // display-only fallback; admin emails shouldn't show in student tab
+    : (dto.role as 'TEACHER' | 'STUDENT') || 'STUDENT';
+
+  return {
+    id:       (dto.id as string)        || '',
+    email:    (dto.email as string)     || '',
+    role,
+    addedAt:  (dto.createdAt as string) || new Date().toISOString(),
+    status:   mapBackendStatus(dto.status as string),
+    userId:   (dto.linkedUserId as string) || undefined
+  };
+}
+
+function mapBackendStatus(s: string): 'NOT_REGISTERED' | 'REGISTERED' | 'ACTIVE' {
+  switch ((s || '').toLowerCase()) {
+    case 'active':     return 'ACTIVE';
+    case 'registered': return 'REGISTERED';
+    default:           return 'NOT_REGISTERED';
+  }
+}
 
 class ApiService {
   // Clear / Reset Mechanism — Returns system to empty state
@@ -25,92 +72,102 @@ class ApiService {
   }
 
   // ============================================================
-  // AUTHORIZED EMAILS (Admin Authority)
+  // AUTHORIZED EMAILS (Admin Authority) — wired to Spring Boot backend
   // ============================================================
+
   async getAuthorizedEmails(): Promise<AuthorizedEmail[]> {
-    await simulatedDelay();
+    try {
+      const resp = await backendFetch('/api/v1/admin/authorized-users');
+      if (resp.ok) {
+        const body = await resp.json();
+        if (body?.success && Array.isArray(body?.data)) {
+          return (body.data as Record<string, unknown>[]).map(mapBackendEmailDto);
+        }
+      }
+      if (resp.status === 401 || resp.status === 403) {
+        return clientStorage.getAuthorizedEmails(); // fallback for non-admin users
+      }
+    } catch {
+      // Backend unreachable — graceful degradation to localStorage during dev
+    }
     return clientStorage.getAuthorizedEmails();
   }
 
   async addAuthorizedEmail(email: string, role: 'TEACHER' | 'STUDENT'): Promise<AuthorizedEmail> {
-    await simulatedDelay();
     const cleanEmail = email.trim().toLowerCase();
-    const existing = clientStorage.getAuthorizedEmails();
-    const found = existing.find((e) => e.email.toLowerCase() === cleanEmail);
-    if (found) {
-      throw new Error(`Email ${cleanEmail} is already on the authorized list.`);
+
+    try {
+      const resp = await backendFetch('/api/v1/admin/authorized-users', {
+        method: 'POST',
+        body: JSON.stringify({ email: cleanEmail, role })
+      });
+
+      const body = await resp.json();
+
+      if (resp.status === 409 || (body && !body.success)) {
+        throw new Error(body?.message || `Email ${cleanEmail} is already authorized.`);
+      }
+      if (!resp.ok) {
+        throw new Error(body?.message || 'Failed to add authorized email.');
+      }
+
+      const dto = mapBackendEmailDto(body.data as Record<string, unknown>);
+      // Keep local cache in sync
+      const existing = clientStorage.getAuthorizedEmails();
+      clientStorage.saveAuthorizedEmails([dto, ...existing]);
+      return dto;
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw new Error('Failed to add authorized email.');
     }
-
-    const newAuth: AuthorizedEmail = {
-      id: `auth-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      email: cleanEmail,
-      role,
-      addedAt: new Date().toISOString(),
-      status: 'NOT_REGISTERED'
-    };
-
-    clientStorage.saveAuthorizedEmails([newAuth, ...existing]);
-    await this.logActivity('Authorized Email Added', `${role}: ${cleanEmail}`, { name: 'Admin', role: 'ADMIN' });
-    return newAuth;
   }
 
   async bulkAddAuthorizedEmails(
     emails: string[],
     role: 'TEACHER' | 'STUDENT'
   ): Promise<{ added: number; skipped: number }> {
-    await simulatedDelay();
-    const existing = clientStorage.getAuthorizedEmails();
-    const existingSet = new Set(existing.map((e) => e.email.toLowerCase()));
-    const toAdd: AuthorizedEmail[] = [];
-    let skipped = 0;
-
-    for (const raw of emails) {
-      const email = raw.trim().toLowerCase();
-      if (!email || !email.includes('@')) continue;
-      if (existingSet.has(email)) {
-        skipped++;
-        continue;
-      }
-      existingSet.add(email);
-      toAdd.push({
-        id: `auth-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        email,
-        role,
-        addedAt: new Date().toISOString(),
-        status: 'NOT_REGISTERED'
+    try {
+      const resp = await backendFetch('/api/v1/admin/authorized-users/bulk', {
+        method: 'POST',
+        body: JSON.stringify({ emails, role })
       });
+      const body = await resp.json();
+      if (resp.ok && body?.success) {
+        const { added = 0, skipped = 0 } = body.data as { added: number; skipped: number };
+        return { added, skipped };
+      }
+      throw new Error(body?.message || 'Bulk add failed.');
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw new Error('Bulk add failed.');
     }
-
-    if (toAdd.length > 0) {
-      clientStorage.saveAuthorizedEmails([...toAdd, ...existing]);
-      await this.logActivity(
-        'Bulk Authorized Emails Added',
-        `${toAdd.length} ${role} emails authorized`,
-        { name: 'Admin', role: 'ADMIN' }
-      );
-    }
-
-    return { added: toAdd.length, skipped };
   }
 
   async removeAuthorizedEmail(id: string): Promise<boolean> {
-    await simulatedDelay();
-    const existing = clientStorage.getAuthorizedEmails();
-    const target = existing.find((e) => e.id === id);
-    if (!target) return false;
-
-    // Remove from authorized list
-    const filtered = existing.filter((e) => e.id !== id);
-    clientStorage.saveAuthorizedEmails(filtered);
-    await this.logActivity('Authorized Email Revoked', target.email, { name: 'Admin', role: 'ADMIN' });
-    return true;
+    try {
+      const resp = await backendFetch(`/api/v1/admin/authorized-users/${id}`, {
+        method: 'DELETE'
+      });
+      if (resp.ok) {
+        // Remove from local cache
+        const existing = clientStorage.getAuthorizedEmails();
+        clientStorage.saveAuthorizedEmails(existing.filter((e) => e.id !== id));
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   async checkEmailAuthorization(email: string): Promise<AuthorizedEmail | null> {
-    await simulatedDelay();
     const cleanEmail = email.trim().toLowerCase();
-    const list = clientStorage.getAuthorizedEmails();
-    return list.find((e) => e.email.toLowerCase() === cleanEmail) || null;
+    try {
+      const all = await this.getAuthorizedEmails();
+      return all.find((e) => e.email.toLowerCase() === cleanEmail) || null;
+    } catch {
+      return null;
+    }
   }
 
   // ============================================================

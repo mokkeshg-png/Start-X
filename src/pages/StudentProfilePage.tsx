@@ -19,6 +19,7 @@ import {
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
+import { AIInsightsPanel } from '../components/AIInsightsPanel';
 import { apiService } from '../services/apiService';
 import { StudentProfile } from '../types';
 
@@ -310,6 +311,13 @@ export const StudentProfilePage: React.FC = () => {
           )}
         </div>
       </Card>
+
+      {/* AI INSIGHTS */}
+      <AIInsightsPanel 
+        title="Student Profile & Skill Analysis"
+        analysisType="skill_analysis"
+        studentId={currentUser.id}
+      />
     </div>
   );
 };

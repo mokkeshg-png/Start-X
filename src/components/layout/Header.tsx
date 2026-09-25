@@ -82,11 +82,22 @@ export const Header: React.FC = () => {
 
       {/* Header Actions */}
       <div className="flex items-center gap-3">
-        {/* Real Authenticated Role Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 text-xs font-semibold">
-          <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="hidden sm:inline">{currentUser.role}</span>
-        </div>
+        {/* Role Badge — clickable Admin shortcut for ADMIN role */}
+        {currentUser.role === 'ADMIN' ? (
+          <Link
+            to="/admin"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 text-xs font-semibold hover:bg-indigo-900/80 hover:text-white transition-colors"
+            title="Open Admin Dashboard"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden sm:inline">ADMIN PANEL</span>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 text-xs font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden sm:inline">{currentUser.role}</span>
+          </div>
+        )}
 
         {/* AI Status Indicator */}
         <Badge variant="ai" size="sm" icon={<Sparkles className="w-3 h-3 text-cyan-400 hidden sm:inline" />}>
