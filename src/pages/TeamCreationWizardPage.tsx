@@ -43,6 +43,10 @@ export const TeamCreationWizardPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const editProjectId = searchParams.get('edit');
 
+  if (!currentUser) {
+    return null;
+  }
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

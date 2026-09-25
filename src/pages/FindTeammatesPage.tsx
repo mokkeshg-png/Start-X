@@ -23,6 +23,10 @@ import { User } from '../types';
 export const FindTeammatesPage: React.FC = () => {
   const { currentUser, sendCollaborationRequest, showToast } = useApp();
 
+  if (!currentUser) {
+    return null;
+  }
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('All Departments');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);

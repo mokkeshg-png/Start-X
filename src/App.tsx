@@ -29,13 +29,15 @@ export const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-          {/* Protected Application Routes with Role & Scope Guards */}
+          {/* Protected Application Routes with Authentication Guards */}
           <Route
             path="/dashboard"
             element={
-              <AppShell>
-                <CoordinatorDashboardPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <CoordinatorDashboardPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -43,17 +45,21 @@ export const App: React.FC = () => {
           <Route
             path="/teams"
             element={
-              <AppShell>
-                <TeamsListPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <TeamsListPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/projects"
             element={
-              <AppShell>
-                <TeamsListPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <TeamsListPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -61,21 +67,21 @@ export const App: React.FC = () => {
           <Route
             path="/teams/new"
             element={
-              <AppShell>
-                <ProtectedRoute permission="teacher:create-project">
+              <ProtectedRoute permission="teacher:create-project">
+                <AppShell>
                   <TeamCreationWizardPage />
-                </ProtectedRoute>
-              </AppShell>
+                </AppShell>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/projects/new"
             element={
-              <AppShell>
-                <ProtectedRoute permission="teacher:create-project">
+              <ProtectedRoute permission="teacher:create-project">
+                <AppShell>
                   <TeamCreationWizardPage />
-                </ProtectedRoute>
-              </AppShell>
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -83,17 +89,21 @@ export const App: React.FC = () => {
           <Route
             path="/teams/:id"
             element={
-              <AppShell>
-                <TeamDetailPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <TeamDetailPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/projects/:id"
             element={
-              <AppShell>
-                <TeamDetailPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <TeamDetailPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -101,17 +111,21 @@ export const App: React.FC = () => {
           <Route
             path="/contributions"
             element={
-              <AppShell>
-                <TeamDetailPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <TeamDetailPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/documents"
             element={
-              <AppShell>
-                <TeamDetailPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <TeamDetailPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -119,17 +133,21 @@ export const App: React.FC = () => {
           <Route
             path="/profile"
             element={
-              <AppShell>
-                <StudentProfilePage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <StudentProfilePage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/students"
             element={
-              <AppShell>
-                <StudentProfilePage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <StudentProfilePage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -137,33 +155,41 @@ export const App: React.FC = () => {
           <Route
             path="/find-teammates"
             element={
-              <AppShell>
-                <FindTeammatesPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <FindTeammatesPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/find-students"
             element={
-              <AppShell>
-                <FindTeammatesPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <FindTeammatesPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/find-collaborators"
             element={
-              <AppShell>
-                <FindTeammatesPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <FindTeammatesPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/collaboration-requests"
             element={
-              <AppShell>
-                <CollaborationRequestsPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <CollaborationRequestsPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -171,9 +197,11 @@ export const App: React.FC = () => {
           <Route
             path="/chat"
             element={
-              <AppShell>
-                <PrivateChatPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <PrivateChatPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -181,9 +209,11 @@ export const App: React.FC = () => {
           <Route
             path="/notifications"
             element={
-              <AppShell>
-                <NotificationsPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <NotificationsPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -191,11 +221,11 @@ export const App: React.FC = () => {
           <Route
             path="/audit"
             element={
-              <AppShell>
-                <ProtectedRoute permission="audit:view">
+              <ProtectedRoute permission="audit:view">
+                <AppShell>
                   <AuditLogPage />
-                </ProtectedRoute>
-              </AppShell>
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 
@@ -203,9 +233,11 @@ export const App: React.FC = () => {
           <Route
             path="/settings"
             element={
-              <AppShell>
-                <SettingsPage />
-              </AppShell>
+              <ProtectedRoute>
+                <AppShell>
+                  <SettingsPage />
+                </AppShell>
+              </ProtectedRoute>
             }
           />
 

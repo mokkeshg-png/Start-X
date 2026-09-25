@@ -10,6 +10,11 @@ import { PREDEFINED_CATEGORIES } from '../mock/initialData';
 
 export const TeamsListPage: React.FC = () => {
   const { currentUser, projects } = useApp();
+
+  if (!currentUser) {
+    return null;
+  }
+
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const navigate = useNavigate();

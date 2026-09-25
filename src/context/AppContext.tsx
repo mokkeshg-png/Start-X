@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   User,
-  UserRole,
   AuthorizedEmail,
   Project,
   ProjectDocument,
@@ -15,18 +14,8 @@ import {
 } from '../types';
 import { INITIAL_BRANDING } from '../mock/initialData';
 import { apiService } from '../services/apiService';
+import { authService, LoginCredentials, RegisterPayload } from '../services/authService';
 import { clientStorage } from '../storage/clientStorage';
-
-export const SYSTEM_ADMIN_USER: User = {
-  id: 'usr-admin-01',
-  name: 'Dr. Arthur Pendelton',
-  email: 'admin@apex.edu',
-  role: 'ADMIN',
-  department: 'Academic Administration',
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ArthurPendelton',
-  profileComplete: true,
-  createdAt: '2026-01-01T00:00:00.000Z'
-};
 
 interface ToastInfo {
   id: string;
@@ -36,10 +25,11 @@ interface ToastInfo {
 }
 
 interface AppContextType {
-  currentUser: User;
-  setCurrentUser: (u: User) => void;
-  setCurrentUserRole: (role: UserRole) => void;
-  logout: () => void;
+  currentUser: User | null;
+  setCurrentUser: (u: User | null) => void;
+  login: (credentials: LoginCredentials) => Promise<User>;
+  register: (payload: RegisterPayload) => Promise<User>;
+  logout: () => Promise<void>;
   theme: 'light' | 'dark';
   setTheme: (t: 'light' | 'dark') => void;
   brandingConfig: CollegeBrandingConfig;
@@ -68,7 +58,6 @@ interface AppContextType {
   // Actions
   refreshData: () => Promise<void>;
   resetData: () => Promise<void>;
-  seedDemoData: () => Promise<void>;
 
   // Project Actions
   createProject: (data: Parameters<typeof apiService.createProject>[0]) => Promise<Project>;
@@ -107,11 +96,9 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Ensure we check storage for logged in user or default to Admin
-  const [currentUser, setCurrentUserState] = useState<User>(() => {
-    const saved = clientStorage.getCurrentUser();
-    if (saved) return saved;
-    return SYSTEM_ADMIN_USER;
+  // Current authenticated user from real session
+  const [currentUser, setCurrentUserState] = useState<User | null>(() => {
+    return clientStorage.getCurrentUser();
   });
 
   const [theme, setThemeState] = useState<'light' | 'dark'>('light');
@@ -128,19 +115,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | undefined>(undefined);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastInfo[]>([]);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState<boolean>(false);
 
-  const setCurrentUser = (u: User) => {
+  const setCurrentUser = (u: User | null) => {
     setCurrentUserState(u);
     clientStorage.saveCurrentUser(u);
   };
 
-  const logout = () => {
-    clientStorage.saveCurrentUser(null);
-    setCurrentUserState(SYSTEM_ADMIN_USER);
+  const login = async (credentials: LoginCredentials): Promise<User> => {
+    setIsLoading(true);
+    try {
+      const response = await authService.login(credentials);
+      setCurrentUserState(response.user);
+      showToast('Authentication Successful', `Welcome back, ${response.user.name}!`, 'success');
+      return response.user;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (payload: RegisterPayload): Promise<User> => {
+    setIsLoading(true);
+    try {
+      const response = await authService.register(payload);
+      setCurrentUserState(response.user);
+      showToast('Registration Successful', `Account created for ${response.user.name}.`, 'success');
+      return response.user;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    await authService.logout();
+    setCurrentUserState(null);
+    setProjects([]);
+    setAuthorizedEmails([]);
+    setNotifications([]);
+    setMessages([]);
+    setRequests([]);
+    setActivityLogs([]);
+    setProjectDocuments([]);
+    setContributions([]);
+    setAiAnalysis(undefined);
+    showToast('Signed Out', 'You have been securely signed out.', 'info');
   };
 
   const setTheme = (t: 'light' | 'dark') => {
@@ -164,46 +185,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const setCurrentUserRole = (role: UserRole) => {
-    if (role === 'ADMIN') {
-      setCurrentUser(SYSTEM_ADMIN_USER);
-      showToast('Switched Persona', 'Now acting as Institutional Administrator.', 'success');
+  // Session verification on mount
+  useEffect(() => {
+    let mounted = true;
+    authService.getCurrentUser().then((user) => {
+      if (mounted) {
+        setCurrentUserState(user);
+      }
+    }).catch(() => {
+      if (mounted) {
+        setCurrentUserState(null);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const refreshData = async () => {
+    if (!currentUser) {
+      setProjects([]);
+      setAuthorizedEmails([]);
+      setNotifications([]);
+      setRequests([]);
+      setActivityLogs([]);
+      setProjectDocuments([]);
+      setContributions([]);
       return;
     }
 
-    // Look for an existing user in storage with that role
-    const users = clientStorage.getUsers().filter((u) => u.role === role);
-    if (users.length > 0) {
-      setCurrentUser(users[0]);
-      showToast('Switched Persona', `Now acting as ${users[0].name} (${role})`, 'success');
-    } else {
-      // Create a test user for that role if none exists so user isn't stuck
-      const mockEmail = role === 'TEACHER' ? 'prof.sharma@apex.edu' : 'rahul.verma@apex.edu';
-      const mockName = role === 'TEACHER' ? 'Prof. Priya Sharma' : 'Rahul Verma';
-      const studentId = role === 'STUDENT' ? 'STU-2026-1042' : undefined;
-
-      const newUser: User = {
-        id: `usr-${role.toLowerCase()}-demo`,
-        name: mockName,
-        email: mockEmail,
-        role,
-        department: 'Computer Science & Engineering',
-        year: role === 'STUDENT' ? '3rd Year' : undefined,
-        studentId,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mockName)}`,
-        profileComplete: true,
-        skills: role === 'STUDENT' ? ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Tailwind CSS'] : undefined,
-        createdAt: new Date().toISOString()
-      };
-
-      const existingUsers = clientStorage.getUsers();
-      clientStorage.saveUsers([newUser, ...existingUsers]);
-      setCurrentUser(newUser);
-      showToast('Activated Persona', `Created & logged in as ${mockName} (${role})`, 'success');
-    }
-  };
-
-  const refreshData = async () => {
     setIsLoading(true);
     try {
       const [projList, authList, notifList, reqList, logList] = await Promise.all([
@@ -243,8 +253,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   useEffect(() => {
-    refreshData();
-  }, [activeProjectId, currentUser.id, currentUser.role]);
+    if (currentUser) {
+      refreshData();
+    }
+  }, [activeProjectId, currentUser?.id, currentUser?.role]);
 
   const getActiveProject = () => {
     return projects.find((p) => p.id === activeProjectId);
@@ -263,6 +275,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const updateProject = async (id: string, updates: Parameters<typeof apiService.updateProject>[1]) => {
+    if (!currentUser) throw new Error('Unauthenticated');
     const updated = await apiService.updateProject(id, updates, currentUser.id);
     showToast('Project Updated', `Changes to '${updated.name}' saved.`, 'success');
     await refreshData();
@@ -270,6 +283,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const finalizeProject = async (id: string) => {
+    if (!currentUser) throw new Error('Unauthenticated');
     const finalized = await apiService.finalizeProject(id, currentUser.id);
     showToast('Project Finalized', `Assigned students notified and team activated.`, 'success');
     await refreshData();
@@ -284,6 +298,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteProjectDocument = async (docId: string) => {
+    if (!currentUser) throw new Error('Unauthenticated');
     const ok = await apiService.deleteProjectDocument(docId, currentUser.id);
     if (ok) {
       showToast('Document Deleted', 'Requirement file removed.', 'info');
@@ -300,6 +315,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const updateStudentContribution = async (id: string, updates: { title?: string; description?: string }) => {
+    if (!currentUser) throw new Error('Unauthenticated');
     const contrib = await apiService.updateStudentContribution(id, currentUser.id, updates);
     showToast('Submission Updated', `Contribution updated.`, 'info');
     await refreshData();
@@ -307,6 +323,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteStudentContribution = async (id: string) => {
+    if (!currentUser) throw new Error('Unauthenticated');
     const ok = await apiService.deleteStudentContribution(id, currentUser.id);
     if (ok) {
       showToast('Submission Removed', 'Your contribution was deleted.', 'info');
@@ -316,6 +333,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const updateUserProfile = async (updates: Partial<User>) => {
+    if (!currentUser) throw new Error('Unauthenticated');
     const updated = await apiService.updateUserProfile(currentUser.id, updates);
     setCurrentUser(updated);
     showToast('Profile Updated', 'Your profile details have been saved.', 'success');
@@ -353,6 +371,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const sendMessage = async (channelType: Message['channelType'], channelId: string, text: string, recipientId?: string) => {
+    if (!currentUser) throw new Error('Unauthenticated');
     await apiService.sendMessage({
       channelType,
       channelId,
@@ -370,6 +389,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const sendCollaborationRequest = async (params: Omit<Parameters<typeof apiService.sendCollaborationRequest>[0], 'sender'>) => {
+    if (!currentUser) throw new Error('Unauthenticated');
     await apiService.sendCollaborationRequest({
       ...params,
       sender: currentUser
@@ -390,26 +410,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await refreshData();
   };
 
-  const seedDemoData = async () => {
-    // Add sample authorized emails to jumpstart testing
-    await apiService.bulkAddAuthorizedEmails(
-      ['prof.sharma@apex.edu', 'prof.arun@apex.edu', 'dr.patel@apex.edu'],
-      'TEACHER'
-    );
-    await apiService.bulkAddAuthorizedEmails(
-      ['rahul.verma@apex.edu', 'sneha.rao@apex.edu', 'vikram.singh@apex.edu', 'ananya.iyer@apex.edu', 'rohit.gupta@apex.edu'],
-      'STUDENT'
-    );
-    showToast('Demo Authorized Emails Seeded', 'Added teacher & student emails to Admin list for quick testing.', 'info');
-    await refreshData();
-  };
-
   return (
     <AppContext.Provider
       value={{
         currentUser,
         setCurrentUser,
-        setCurrentUserRole,
+        login,
+        register,
         logout,
         theme,
         setTheme,
@@ -433,7 +440,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         removeToast,
         refreshData,
         resetData,
-        seedDemoData,
         createProject,
         updateProject,
         finalizeProject,

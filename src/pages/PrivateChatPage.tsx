@@ -10,6 +10,10 @@ import { Message, Project } from '../types';
 export const PrivateChatPage: React.FC = () => {
   const { currentUser, projects } = useApp();
 
+  if (!currentUser) {
+    return null;
+  }
+
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');

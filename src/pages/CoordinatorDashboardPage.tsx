@@ -42,11 +42,14 @@ export const CoordinatorDashboardPage: React.FC = () => {
     addAuthorizedEmail,
     bulkAddAuthorizedEmails,
     removeAuthorizedEmail,
-    seedDemoData,
     showToast
   } = useApp();
 
   const navigate = useNavigate();
+
+  if (!currentUser) {
+    return null;
+  }
 
   // Admin email management state
   const [activeAdminTab, setActiveAdminTab] = useState<'STUDENT' | 'TEACHER'>('TEACHER');
@@ -123,14 +126,6 @@ export const CoordinatorDashboardPage: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={seedDemoData}
-              icon={<Sparkles className="w-4 h-4 text-amber-400" />}
-            >
-              Seed Sample Emails
-            </Button>
             <Button
               variant="secondary"
               size="sm"

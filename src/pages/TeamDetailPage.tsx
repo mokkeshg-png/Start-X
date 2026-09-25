@@ -42,6 +42,10 @@ export const TeamDetailPage: React.FC = () => {
   const { currentUser, showToast } = useApp();
   const navigate = useNavigate();
 
+  if (!currentUser) {
+    return null;
+  }
+
   const [project, setProject] = useState<Project | null>(null);
   const [teacher, setTeacher] = useState<User | null>(null);
   const [teamLeader, setTeamLeader] = useState<User | null>(null);

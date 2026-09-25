@@ -5,27 +5,16 @@ import {
   Sparkles,
   ShieldCheck,
   Users,
-  BarChart3,
-  Network,
-  ArrowRight,
-  GraduationCap,
   Brain,
-  CheckCircle2,
   FileCheck2,
-  ChevronRight,
-  ShieldAlert
+  ArrowRight,
+  Lock
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
-import { UserRole } from '../types';
 
 export const LandingPage: React.FC = () => {
-  const { brandingConfig, setCurrentUserRole } = useApp();
+  const { brandingConfig, currentUser } = useApp();
   const navigate = useNavigate();
-
-  const handleDemoAccess = (role: UserRole) => {
-    setCurrentUserRole(role);
-    navigate('/dashboard');
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white">
@@ -44,21 +33,35 @@ export const LandingPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link
-            to="/login"
-            className="text-xs font-semibold text-slate-300 hover:text-white transition-colors"
-          >
-            Portal Sign In
-          </Link>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => handleDemoAccess('ADMIN')}
-            icon={<ArrowRight className="w-4 h-4" />}
-            iconPosition="right"
-          >
-            Institutional Portal
-          </Button>
+          {currentUser ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+              icon={<ArrowRight className="w-4 h-4" />}
+              iconPosition="right"
+            >
+              Go to Dashboard
+            </Button>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+              >
+                Sign In
+              </Link>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => navigate('/login')}
+                icon={<Lock className="w-4 h-4" />}
+                iconPosition="left"
+              >
+                Institutional Portal
+              </Button>
+            </>
+          )}
         </div>
       </header>
 
@@ -77,61 +80,62 @@ export const LandingPage: React.FC = () => {
           Admin-controlled authorization, faculty-led project creation with uploaded PRD requirement analysis, deterministic team compatibility matching, and dedicated student collaboration workspaces.
         </p>
 
-        {/* Demo Roles Quick Launch Card */}
-        <div className="mt-10 p-6 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-2xl max-w-3xl w-full">
+        {/* Action CTA */}
+        <div className="mt-8 flex items-center justify-center gap-4">
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => navigate(currentUser ? '/dashboard' : '/login')}
+            icon={<ArrowRight className="w-4 h-4" />}
+            iconPosition="right"
+          >
+            {currentUser ? 'Enter Dashboard' : 'Sign In with College Credentials'}
+          </Button>
+        </div>
+
+        {/* Institutional Roles Overview Card */}
+        <div className="mt-12 p-6 bg-slate-900/90 rounded-2xl border border-slate-800 shadow-2xl max-w-3xl w-full">
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center justify-center gap-2">
             <ShieldCheck className="w-4 h-4 text-indigo-400" />
-            Live System Personas — 3 Strict Authentication Roles
+            Institutional Access Control — 3 Official Roles
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button
-              onClick={() => handleDemoAccess('ADMIN')}
-              className="p-4 rounded-xl bg-slate-800/80 hover:bg-indigo-950/60 border border-slate-700 hover:border-indigo-500/60 text-left transition-all group cursor-pointer"
-            >
+            <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 text-left">
               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs mb-2">
                 AD
               </div>
-              <div className="font-bold text-sm text-white group-hover:text-indigo-300">
+              <div className="font-bold text-sm text-white">
                 Institutional Admin
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Dr. Arthur Pendelton</p>
-              <span className="text-[10px] text-indigo-400 font-semibold block mt-2 flex items-center gap-1">
-                Authorized Email Control <ChevronRight className="w-3 h-3" />
-              </span>
-            </button>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Authorizes faculty and student institutional emails for platform access.
+              </p>
+            </div>
 
-            <button
-              onClick={() => handleDemoAccess('TEACHER')}
-              className="p-4 rounded-xl bg-slate-800/80 hover:bg-purple-950/60 border border-slate-700 hover:border-purple-500/60 text-left transition-all group cursor-pointer"
-            >
+            <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 text-left">
               <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs mb-2">
                 TC
               </div>
-              <div className="font-bold text-sm text-white group-hover:text-purple-300">
+              <div className="font-bold text-sm text-white">
                 Faculty / Teacher
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Prof. Priya Sharma</p>
-              <span className="text-[10px] text-purple-400 font-semibold block mt-2 flex items-center gap-1">
-                Create & Form Teams <ChevronRight className="w-3 h-3" />
-              </span>
-            </button>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Creates projects, uploads PRDs, assigns team leaders, and reviews compatibility.
+              </p>
+            </div>
 
-            <button
-              onClick={() => handleDemoAccess('STUDENT')}
-              className="p-4 rounded-xl bg-slate-800/80 hover:bg-emerald-950/60 border border-slate-700 hover:border-emerald-500/60 text-left transition-all group cursor-pointer"
-            >
+            <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 text-left">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs mb-2">
                 ST
               </div>
-              <div className="font-bold text-sm text-white group-hover:text-emerald-300">
+              <div className="font-bold text-sm text-white">
                 Verified Student
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Rahul Verma (ID: STU-2026-1042)</p>
-              <span className="text-[10px] text-emerald-400 font-semibold block mt-2 flex items-center gap-1">
-                Project Workspace & Profile <ChevronRight className="w-3 h-3" />
-              </span>
-            </button>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Collaborates on projects, submits work contributions, and connects with teammates.
+              </p>
+            </div>
           </div>
         </div>
       </section>

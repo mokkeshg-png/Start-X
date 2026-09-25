@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Settings, Palette, Sun, Moon, ShieldCheck, Check, Database, Trash2, RefreshCw } from 'lucide-react';
+import { Settings, Palette, Sun, Moon, Check, Database, Trash2 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 
 export const SettingsPage: React.FC = () => {
-  const { brandingConfig, setBrandingConfig, theme, setTheme, showToast, seedDemoData, resetData } = useApp();
+  const { brandingConfig, setBrandingConfig, theme, setTheme, showToast, resetData } = useApp();
 
   const [collegeName, setCollegeName] = useState(brandingConfig.collegeName);
   const [platformName, setPlatformName] = useState(brandingConfig.platformName);
@@ -30,7 +30,7 @@ export const SettingsPage: React.FC = () => {
           <Settings className="w-5 h-5 text-indigo-500" /> Platform & Institutional Settings
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Customize college branding tokens, platform appearance, data storage, and demo state controls.
+          Customize college branding tokens, platform appearance, and runtime data controls.
         </p>
       </div>
 
@@ -38,25 +38,16 @@ export const SettingsPage: React.FC = () => {
       <Card variant="ai" className="p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-indigo-200 dark:border-indigo-900 pb-3">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Database className="w-4 h-4 text-indigo-500" /> Runtime Data Storage & Demo Seeding Controls
+            <Database className="w-4 h-4 text-indigo-500" /> Runtime Data Storage
           </h3>
           <Badge variant="ai">Zero-Mock Architecture</Badge>
         </div>
 
         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-          The system stores user-created entities in local storage. You can purge all business records back to a zero-data empty state, or load demo telemetry for hackathon evaluation.
+          The system stores user-created entities in local storage. You can purge all business records back to a zero-data empty state.
         </p>
 
         <div className="flex flex-wrap gap-3 pt-1 text-xs">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={seedDemoData}
-            icon={<RefreshCw className="w-3.5 h-3.5 text-indigo-500" />}
-          >
-            Seed Sample Telemetry Data
-          </Button>
-
           <Button
             variant="danger"
             size="sm"

@@ -25,9 +25,13 @@ import { StudentProfile } from '../types';
 export const StudentProfilePage: React.FC = () => {
   const { currentUser, updateUserProfile, showToast } = useApp();
 
+  if (!currentUser) {
+    return null;
+  }
+
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(currentUser.name);
-  const [department, setDepartment] = useState(currentUser.department);
+  const [name, setName] = useState(currentUser.name || '');
+  const [department, setDepartment] = useState(currentUser.department || '');
   const [year, setYear] = useState(currentUser.year || '3rd Year');
   const [bio, setBio] = useState(currentUser.bio || '');
   const [github, setGithub] = useState(currentUser.github || '');

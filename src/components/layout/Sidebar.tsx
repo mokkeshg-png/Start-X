@@ -30,6 +30,10 @@ export const Sidebar: React.FC = () => {
   const { currentUser } = useApp();
   const location = useLocation();
 
+  if (!currentUser) {
+    return null;
+  }
+
   const iconMap: Record<string, React.ReactNode> = {
     LayoutDashboard: <LayoutDashboard className="w-4 h-4" />,
     FolderGit2: <FolderGit2 className="w-4 h-4" />,

@@ -4,17 +4,13 @@ import { can } from './authorization';
 import { PermissionKey, ResourceObject } from './auth.types';
 import { ShieldAlert, ArrowLeft, LayoutDashboard, Lock } from 'lucide-react';
 import { Button } from '../components/common/Button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 
 export const AccessRestrictedPage: React.FC<{ reason?: string }> = ({ reason }) => {
   const navigate = useNavigate();
   const { currentUser } = useApp();
 
-  const getDashboardPath = () => {
-    return '/dashboard';
-  };
-
-  const roleLabel = currentUser?.role || 'UNKNOWN';
+  const roleLabel = currentUser?.role || 'UNAUTHENTICATED';
 
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-8 animate-in fade-in duration-200">
@@ -47,7 +43,7 @@ export const AccessRestrictedPage: React.FC<{ reason?: string }> = ({ reason }) 
         <Button
           variant="primary"
           size="sm"
-          onClick={() => navigate(getDashboardPath())}
+          onClick={() => navigate('/dashboard')}
           icon={<LayoutDashboard className="w-3.5 h-3.5" />}
         >
           Return to Dashboard
@@ -71,14 +67,15 @@ export const Can: React.FC<CanProps> = ({
   fallback = null
 }) => {
   const { currentUser } = useApp();
-  const allowed = can(currentUser, permission, resource);
+  if (!currentUser) return <>{fallback}</>;
 
+  const allowed = can(currentUser, permission, resource);
   if (!allowed) return <>{fallback}</>;
   return <>{children}</>;
 };
 
 interface ProtectedRouteProps {
-  permission: PermissionKey;
+  permission?: PermissionKey;
   resource?: ResourceObject;
   children: React.ReactNode;
 }
@@ -89,10 +86,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children
 }) => {
   const { currentUser } = useApp();
-  const allowed = can(currentUser, permission, resource);
 
-  if (!allowed) {
-    return <AccessRestrictedPage />;
+  // If not logged in, redirect directly to real login page
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If a specific permission is required, check authorization
+  if (permission) {
+    const allowed = can(currentUser, permission, resource);
+    if (!allowed) {
+      return <AccessRestrictedPage />;
+    }
   }
 
   return <>{children}</>;
@@ -110,8 +115,9 @@ export const ProtectedAction: React.FC<ProtectedActionProps> = ({
   children
 }) => {
   const { currentUser } = useApp();
-  const allowed = can(currentUser, permission, resource);
+  if (!currentUser) return null;
 
+  const allowed = can(currentUser, permission, resource);
   if (!allowed) return null;
   return <>{children}</>;
 };

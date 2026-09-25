@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useApp, SYSTEM_ADMIN_USER } from '../context/AppContext';
-import { GraduationCap, Lock, Mail, ShieldAlert, ArrowRight, UserCheck, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
+import { Lock, Mail, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '../components/common/Button';
-import { UserRole } from '../types';
-import { apiService } from '../services/apiService';
-import { clientStorage } from '../storage/clientStorage';
 
 export const LoginPage: React.FC = () => {
-  const { brandingConfig, setCurrentUser, setCurrentUserRole, showToast } = useApp();
+  const { brandingConfig, login, register } = useApp();
   const [tab, setTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('••••••••••••');
+  const [loginPassword, setLoginPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Register form state
   const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
   const [regName, setRegName] = useState('');
   const [regDept, setRegDept] = useState('Computer Science & Engineering');
   const [regYear, setRegYear] = useState('3rd Year');
@@ -36,41 +34,13 @@ export const LoginPage: React.FC = () => {
     setErrorMsg('');
 
     try {
-      const emailClean = loginEmail.trim().toLowerCase();
-
-      // Check if admin
-      if (emailClean === SYSTEM_ADMIN_USER.email.toLowerCase() || emailClean === 'admin') {
-        setCurrentUser(SYSTEM_ADMIN_USER);
-        showToast('Administrator Authenticated', 'Logged in as Institutional Administrator.', 'success');
-        navigate('/dashboard');
-        return;
-      }
-
-      // Check existing registered users
-      const users = clientStorage.getUsers();
-      const user = users.find(
-        (u) => u.email.toLowerCase() === emailClean || (u.studentId && u.studentId.toLowerCase() === emailClean)
-      );
-
-      if (user) {
-        setCurrentUser(user);
-        showToast('Login Successful', `Welcome back, ${user.name}!`, 'success');
-        navigate('/dashboard');
-        return;
-      }
-
-      // If user doesn't exist, check if email is pre-authorized by Admin
-      const auth = await apiService.checkEmailAuthorization(emailClean);
-      if (auth) {
-        // Pre-authorized but hasn't registered yet!
-        setTab('REGISTER');
-        setRegEmail(auth.email);
-        setErrorMsg(`Your email is authorized as ${auth.role}. Please complete your registration below.`);
-      } else {
-        setErrorMsg('This email is not authorized by the College Administrator. Please contact your administrator to be added.');
-      }
+      await login({
+        email: loginEmail,
+        password: loginPassword
+      });
+      navigate('/dashboard');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Authentication failed');
+      setErrorMsg(err.message || 'Authentication failed. Please verify your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -88,8 +58,9 @@ export const LoginPage: React.FC = () => {
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const newUser = await apiService.registerUser({
+      const user = await register({
         email: regEmail,
+        password: regPassword,
         name: regName,
         department: regDept,
         year: regYear,
@@ -99,22 +70,15 @@ export const LoginPage: React.FC = () => {
         linkedin: regLinkedin
       });
 
-      setCurrentUser(newUser);
-      setRegSuccess(`Registration successful! Generated permanent Student ID: ${newUser.studentId || 'N/A'}`);
-      showToast('Registration Complete', `Welcome ${newUser.name}!`, 'success');
+      setRegSuccess(`Registration successful! Welcome ${user.name}.`);
       setTimeout(() => {
         navigate('/dashboard');
-      }, 1200);
+      }, 1000);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Registration failed');
+      setErrorMsg(err.message || 'Registration failed. Please check your details.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleDemoSelect = (role: UserRole) => {
-    setCurrentUserRole(role);
-    navigate('/dashboard');
   };
 
   return (
@@ -161,7 +125,7 @@ export const LoginPage: React.FC = () => {
                   tab === 'REGISTER' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Complete Registration
+                Create Account
               </button>
             </div>
 
@@ -183,22 +147,19 @@ export const LoginPage: React.FC = () => {
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Official College Email or Student ID
+                    Official College Email
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                     <input
-                      type="text"
+                      type="email"
                       required
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="e.g. admin@apex.edu, prof.sharma@apex.edu, or STU-2026-1042"
+                      placeholder="e.g. yourname@apex.edu"
                       className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
-                  <span className="text-[10px] text-slate-500 mt-1 block">
-                    Use your admin-approved email or unique Student ID.
-                  </span>
                 </div>
 
                 <div>
@@ -212,7 +173,7 @@ export const LoginPage: React.FC = () => {
                       required
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="••••••••••••"
+                      placeholder="Enter your password"
                       className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
@@ -238,12 +199,26 @@ export const LoginPage: React.FC = () => {
                     required
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="e.g. rahul.verma@apex.edu"
+                    placeholder="e.g. student@apex.edu"
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <span className="text-[10px] text-slate-400 mt-0.5 block">
                     Must be pre-approved by the Admin.
                   </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    placeholder="Create a secure password"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
                 </div>
 
                 <div>
@@ -255,7 +230,7 @@ export const LoginPage: React.FC = () => {
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    placeholder="e.g. Rahul Verma"
+                    placeholder="e.g. John Doe"
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -337,43 +312,10 @@ export const LoginPage: React.FC = () => {
                   className="w-full py-2.5 text-xs font-semibold mt-2"
                   variant="primary"
                 >
-                  Create Account & Generate Student ID
+                  Create Account
                 </Button>
               </form>
             )}
-
-            {/* Quick Demo Access Bar */}
-            <div className="pt-4 border-t border-slate-800 space-y-2">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center flex items-center justify-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5 text-indigo-400" /> Evaluation Quick Access Personas
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleDemoSelect('ADMIN')}
-                  className="px-2.5 py-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg text-left text-xs text-slate-200 transition-colors"
-                >
-                  <span className="font-semibold block text-indigo-300">1. Admin</span>
-                  <span className="text-[10px] text-slate-400">Dr. Pendelton</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoSelect('TEACHER')}
-                  className="px-2.5 py-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg text-left text-xs text-slate-200 transition-colors"
-                >
-                  <span className="font-semibold block text-purple-300">2. Teacher</span>
-                  <span className="text-[10px] text-slate-400">Prof. Sharma</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoSelect('STUDENT')}
-                  className="px-2.5 py-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-lg text-left text-xs text-slate-200 transition-colors"
-                >
-                  <span className="font-semibold block text-emerald-300">3. Student</span>
-                  <span className="text-[10px] text-slate-400">Rahul Verma</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
