@@ -33,6 +33,8 @@ import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
+import { Spinner } from '../components/common/Spinner';
+import { AIInsightsPanel } from '../components/AIInsightsPanel';
 import { apiService } from '../services/apiService';
 import { clientStorage } from '../storage/clientStorage';
 import { Project, ProjectDocument, StudentContribution, Message, User } from '../types';
@@ -57,7 +59,7 @@ export const TeamDetailPage: React.FC = () => {
 
   // Active tab state
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'members' | 'contributions' | 'documents' | 'chat' | 'mentor'
+    'overview' | 'members' | 'contributions' | 'documents' | 'chat' | 'mentor' | 'ai_insights'
   >('overview');
 
   // Contribution upload/edit modal
@@ -325,7 +327,8 @@ export const TeamDetailPage: React.FC = () => {
           { key: 'contributions', label: `Submissions (${contributions.length})` },
           { key: 'documents', label: `PRD & Docs (${documents.length})` },
           { key: 'chat', label: 'Team Chat' },
-          { key: 'mentor', label: 'Mentor Discussion' }
+          { key: 'mentor', label: 'Mentor Discussion' },
+          { key: 'ai_insights', label: 'AI Insights' }
         ].map((t) => (
           <button
             key={t.key}
@@ -340,6 +343,34 @@ export const TeamDetailPage: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* TAB: AI INSIGHTS */}
+      {activeTab === 'ai_insights' && (
+        <div className="space-y-6">
+          <AIInsightsPanel 
+            title="Collective Project Insight"
+            analysisType="collective_insight"
+            teamId={project.id}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AIInsightsPanel 
+              title="Progress Analysis"
+              analysisType="progress_analysis"
+              teamId={project.id}
+            />
+            <AIInsightsPanel 
+              title="Collaboration Gaps"
+              analysisType="collaboration_gap"
+              teamId={project.id}
+            />
+          </div>
+          <AIInsightsPanel 
+            title="Team Recommendations"
+            analysisType="collaboration_recommendation"
+            teamId={project.id}
+          />
+        </div>
+      )}
 
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (

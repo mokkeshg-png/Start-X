@@ -81,11 +81,30 @@ export const Header: React.FC = () => {
 
       {/* Header Actions */}
       <div className="flex items-center gap-3">
+<<<<<<< HEAD
+        {/* Role Badge — clickable Admin shortcut for ADMIN role */}
+        {currentUser.role === 'ADMIN' ? (
+          <Link
+            to="/admin"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 text-xs font-semibold hover:bg-indigo-900/80 hover:text-white transition-colors"
+            title="Open Admin Dashboard"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden sm:inline">ADMIN PANEL</span>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 text-xs font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden sm:inline">{currentUser.role}</span>
+          </div>
+        )}
+=======
         {/* Real Authenticated Role Badge */}
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-100 text-[#0B1E36] border border-slate-200 text-xs font-semibold">
           <ShieldCheck className="w-3.5 h-3.5 text-[#0B1E36]" />
           <span className="hidden sm:inline">{currentUser.role}</span>
         </div>
+>>>>>>> 3a676ef54d8559b29468c3d358c0b4ea279b1542
 
         {/* System Status Indicator */}
         <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 border border-emerald-200 text-[11px] font-medium text-emerald-800">

@@ -30,6 +30,7 @@ import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
+import { AIInsightsPanel } from '../components/AIInsightsPanel';
 import { clientStorage } from '../storage/clientStorage';
 
 interface CoordinatorDashboardPageProps {
@@ -514,6 +515,12 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
             </div>
           )}
         </Card>
+
+        {/* AI INSIGHTS */}
+        <AIInsightsPanel 
+          title="Global Coordinator Intelligence"
+          analysisType="team_formation"
+        />
       </div>
     );
   }
@@ -677,6 +684,13 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
           </div>
         )}
       </Card>
+
+      {/* AI INSIGHTS */}
+      <AIInsightsPanel 
+        title="My Personalized AI Insights"
+        analysisType="skill_analysis"
+        studentId={currentUser.id}
+      />
     </div>
   );
 };

@@ -73,6 +73,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/signup").permitAll()
                 .requestMatchers("/api/v1/auth/login").permitAll()
                 .requestMatchers("/api/v1/auth/refresh").permitAll()
+                // Bootstrap requires a valid JWT (checked in controller) but not a DB role
+                .requestMatchers("/api/v1/admin/bootstrap").authenticated()
                 // Everything else requires a valid Supabase JWT
                 .anyRequest().authenticated()
             )
