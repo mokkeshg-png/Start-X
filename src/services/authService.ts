@@ -12,6 +12,7 @@ export interface RegisterPayload {
   name: string;
   department: string;
   password?: string;
+  role?: UserRole;
   year?: string;
   bio?: string;
   skills?: string[];
@@ -91,11 +92,12 @@ class AuthService {
   private mapSupabaseUser(sbUser: Record<string, unknown>): User {
     const meta    = (sbUser.user_metadata as Record<string, unknown>) || {};
     const appMeta = (sbUser.app_metadata  as Record<string, unknown>) || {};
+    const role    = ((appMeta.role || meta.role || 'STUDENT') as string).toUpperCase() as UserRole;
     return {
       id:         sbUser.id as string,
       email:      sbUser.email as string,
       name:       (meta.name as string) || (sbUser.email as string).split('@')[0],
-      role:       ((appMeta.role || meta.role || 'STUDENT') as string).toUpperCase() as UserRole,
+      role,
       department: (meta.department as string) || '',
       year:       (meta.year as string) || '',
       bio:        (meta.bio as string) || '',
@@ -193,6 +195,7 @@ class AuthService {
   async register(payload: RegisterPayload): Promise<AuthResponse> {
     const cleanEmail = payload.email.trim().toLowerCase();
     const password   = payload.password || '';
+    const assignedRole = payload.role || 'STUDENT';
 
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
@@ -200,14 +203,13 @@ class AuthService {
       options: {
         data: {
           name:       payload.name,
+          role:       assignedRole,
           department: payload.department,
           year:       payload.year,
           bio:        payload.bio,
           skills:     payload.skills,
           github:     payload.github,
           linkedin:   payload.linkedin
-          // Note: role is intentionally NOT set here.
-          // The backend resolves role from authorized_emails after first login.
         }
       }
     });

@@ -85,21 +85,22 @@ export const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      {/* 2. Hero Section with Subtle Institutional Campus Background */}
-      <section id="overview" className="relative py-20 sm:py-28 px-6 sm:px-10 overflow-hidden border-b border-slate-200">
-        {/* Subtle Campus Building Background with White Wash Overlay */}
+      {/* 2. Hero Section with Open Layout & Full-Width Frosted Campus Background */}
+      <section id="overview" className="relative overflow-hidden border-b border-slate-200 bg-white">
+        {/* Campus Arch Background (High-clarity entrance arch with elegant frosted glass wash) */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <img
-            src="/agni-building.jpg"
-            alt="AGNI COLLEGE OF TECHNOLOGY Campus"
-            className="w-full h-full object-cover object-top opacity-15"
+            src="/agni-entrance.png"
+            alt="AGNI COLLEGE OF TECHNOLOGY Campus Entrance"
+            className="w-full h-full object-cover object-center opacity-65 select-none"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/95 to-white"></div>
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px]"></div>
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
+        {/* Open Hero Content Layout (Sitting directly on the page layout, no box or card enclosure) */}
+        <div className="relative z-10 max-w-5xl mx-auto py-20 sm:py-28 px-6 sm:px-10 text-center flex flex-col items-center">
           {/* Institutional Label / Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold tracking-wide uppercase mb-6 shadow-2xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded bg-white/90 border border-slate-300 text-[#0B1E36] text-xs font-semibold tracking-wide uppercase mb-6 shadow-2xs backdrop-blur-xs">
             <GraduationCap className="w-4 h-4 text-[#0B1E36]" />
             <span>Official Academic Platform • {brandingConfig.collegeName}</span>
           </div>
@@ -110,7 +111,7 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-6 text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl leading-relaxed font-normal">
+          <p className="mt-6 text-sm sm:text-base md:text-lg text-slate-700 max-w-2xl leading-relaxed font-normal">
             An institution-grade platform connecting administration-authorized faculty mentors with student project teams through deterministic requirement analysis, structured milestones, and secure role-based collaboration.
           </p>
 
@@ -122,13 +123,13 @@ export const LandingPage: React.FC = () => {
               onClick={() => navigate(currentUser ? '/dashboard' : '/login')}
               icon={<ArrowRight className="w-4 h-4" />}
               iconPosition="right"
-              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white font-semibold text-sm px-6 py-3 shadow-sm rounded"
+              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white font-semibold text-sm px-6 py-3 shadow-sm rounded cursor-pointer"
             >
               {currentUser ? 'Enter Academic Workspace' : 'Sign In with College Credentials'}
             </Button>
             <a
               href="#governance"
-              className="inline-flex items-center justify-center px-6 py-3 rounded text-sm font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 hover:text-[#0B1E36] transition-colors shadow-2xs"
+              className="inline-flex items-center justify-center px-6 py-3 rounded text-sm font-semibold text-slate-800 bg-white/90 border border-slate-300 hover:bg-white hover:text-[#0B1E36] transition-colors shadow-2xs"
             >
               Platform Overview
             </a>
