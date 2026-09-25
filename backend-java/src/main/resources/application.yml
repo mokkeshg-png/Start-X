@@ -29,7 +29,7 @@ spring:
 
 app:
   cors:
-    allowed-origins: ${FRONTEND_URL:http://localhost:5173}
+    allowed-origins: ${FRONTEND_URL:http://localhost:5174}
   supabase:
     url: ${SUPABASE_URL:}
     anon-key: ${SUPABASE_ANON_KEY:}

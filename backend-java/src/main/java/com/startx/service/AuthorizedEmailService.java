@@ -39,11 +39,17 @@ public class AuthorizedEmailService {
 
     private final AuthorizedEmailRepository authorizedEmailRepository;
     private final UserRepository userRepository;
+    private final UserService userService;
+    private final SupabaseAdminClient supabaseAdminClient;
 
     public AuthorizedEmailService(AuthorizedEmailRepository authorizedEmailRepository,
-                                  UserRepository userRepository) {
+                                  UserRepository userRepository,
+                                  UserService userService,
+                                  SupabaseAdminClient supabaseAdminClient) {
         this.authorizedEmailRepository = authorizedEmailRepository;
         this.userRepository = userRepository;
+        this.userService = userService;
+        this.supabaseAdminClient = supabaseAdminClient;
     }
 
     // =========================================================================
@@ -86,23 +92,25 @@ public class AuthorizedEmailService {
         String clean = normalize(email);
         validateEmail(clean);
 
-        if (authorizedEmailRepository.existsByEmail(clean)) {
-            throw new IllegalArgumentException("Email '" + clean + "' is already authorized.");
-        }
-
         // ADMIN role: only an existing admin can authorize another admin
         if ("ADMIN".equalsIgnoreCase(appRole) && addedByUuid == null) {
             throw new IllegalArgumentException("An existing admin must authorize ADMIN-role emails.");
         }
 
-        AuthorizedEmail entity = new AuthorizedEmail();
-        entity.setEmail(clean);
-        entity.setRole(toDbRole(appRole));
-        entity.setStatus("pending");
-        entity.setAddedBy(addedByUuid);
+        AuthorizedEmail saved;
+        if (authorizedEmailRepository.existsByEmail(clean)) {
+            saved = authorizedEmailRepository.findByEmail(clean).get();
+        } else {
+            AuthorizedEmail entity = new AuthorizedEmail();
+            entity.setEmail(clean);
+            entity.setRole(toDbRole(appRole));
+            entity.setStatus("pending");
+            entity.setAddedBy(addedByUuid);
+            saved = authorizedEmailRepository.save(entity);
+            log.info("Admin {} authorized email {} as {}", addedByUuid, clean, appRole);
+        }
 
-        AuthorizedEmail saved = authorizedEmailRepository.save(entity);
-        log.info("Admin {} authorized email {} as {}", addedByUuid, clean, appRole);
+        provisionUserImmediately(clean, appRole);
         return toDto(saved);
     }
 
@@ -153,6 +161,7 @@ public class AuthorizedEmailService {
             }
             if (authorizedEmailRepository.existsByEmail(clean)) {
                 skipped++;
+                provisionUserImmediately(clean, appRole);
                 continue;
             }
             AuthorizedEmail entity = new AuthorizedEmail();
@@ -162,10 +171,34 @@ public class AuthorizedEmailService {
             entity.setAddedBy(adminUuid);
             authorizedEmailRepository.save(entity);
             added++;
+            
+            provisionUserImmediately(clean, appRole);
         }
 
         log.info("Bulk authorized {} {} emails (skipped={}, invalid={})", added, appRole, skipped, invalid);
         return new BulkResult(added, skipped, invalid);
+    }
+
+    private void provisionUserImmediately(String cleanEmail, String appRole) {
+        try {
+            String supabaseIdStr;
+            try {
+                supabaseIdStr = supabaseAdminClient.createUser(cleanEmail, toDbRole(appRole));
+            } catch (Exception e) {
+                // If it fails (e.g. user already registered in Supabase), try to get the existing UUID
+                log.info("User {} already in Supabase or creation failed, fetching UUID...", cleanEmail);
+                supabaseIdStr = supabaseAdminClient.getUserIdByEmail(cleanEmail);
+            }
+
+            if (supabaseIdStr != null && !supabaseIdStr.isBlank()) {
+                UUID supabaseUuid = UUID.fromString(supabaseIdStr);
+                String fullName = cleanEmail.split("@")[0];
+                userService.provisionUser(supabaseUuid, cleanEmail, fullName, toDbRole(appRole));
+                linkUser(cleanEmail, supabaseUuid);
+            }
+        } catch (Exception ex) {
+            log.error("Failed to provision user immediately for {}: {}", cleanEmail, ex.getMessage());
+        }
     }
 
     /**

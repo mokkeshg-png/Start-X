@@ -62,7 +62,7 @@ public class StartXApplicationTests {
     @Test
     void testCorsConfiguration() throws Exception {
         mockMvc.perform(options("/api/health")
-                        .header("Origin", "http://localhost:5173")
+                        .header("Origin", "http://localhost:5174")
                         .header("Access-Control-Request-Method", "GET"))
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Access-Control-Allow-Origin"));
