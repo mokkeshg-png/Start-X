@@ -25,7 +25,7 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans-ui selection:bg-[#0B1E36] selection:text-white relative">
       {/* 1. Official Institutional Header */}
       <header className="h-20 border-b border-slate-200 bg-white/95 backdrop-blur-md px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 shadow-xs">
-        <div className="flex items-center gap-4">
+        <a href="/" onClick={(e) => { e.preventDefault(); window.location.reload(); }} className="flex items-center gap-4 cursor-pointer">
           <div className="w-12 h-12 rounded bg-white p-1 flex items-center justify-center border border-slate-200 shadow-xs shrink-0">
             <img src="/agni-logo.png" alt="AGNI COLLEGE OF TECHNOLOGY Logo" className="w-full h-full object-contain" />
           </div>
@@ -39,7 +39,7 @@ export const LandingPage: React.FC = () => {
               {brandingConfig.platformName}
             </p>
           </div>
-        </div>
+        </a>
 
         {/* Center Navigation Links for Official Academic Look */}
         <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-600">
@@ -87,52 +87,65 @@ export const LandingPage: React.FC = () => {
 
       {/* 2. Hero Section with Open Layout & Full-Width Frosted Campus Background */}
       <section id="overview" className="relative overflow-hidden border-b border-slate-200 bg-white">
-        {/* Campus Arch Background (High-clarity entrance arch with elegant frosted glass wash) */}
+        {/* Layer 1: Campus background image — sharp and clear */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <img
             src="/agni-entrance.png"
             alt="AGNI COLLEGE OF TECHNOLOGY Campus Entrance"
-            className="w-full h-full object-cover object-center opacity-65 select-none"
+            className="w-full h-full object-cover object-center select-none"
+            style={{ transform: 'scale(1.01)' }}
           />
-          <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px]"></div>
+          {/* Very subtle darkening tint so glass panel pops — NOT a white wash */}
+          <div className="absolute inset-0" style={{ background: 'rgba(0, 0, 0, 0.08)' }} />
         </div>
 
-        {/* Open Hero Content Layout (Sitting directly on the page layout, no box or card enclosure) */}
-        <div className="relative z-10 max-w-5xl mx-auto py-20 sm:py-28 px-6 sm:px-10 text-center flex flex-col items-center">
-          {/* Institutional Label / Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded bg-white/90 border border-slate-300 text-[#0B1E36] text-xs font-semibold tracking-wide uppercase mb-6 shadow-2xs backdrop-blur-xs">
-            <GraduationCap className="w-4 h-4 text-[#0B1E36]" />
-            <span>Official Academic Platform • {brandingConfig.collegeName}</span>
-          </div>
+        {/* Layer 2: Centered frosted-glass content panel */}
+        <div className="relative z-10 max-w-5xl mx-auto py-16 sm:py-24 px-6 sm:px-10 flex flex-col items-center">
+          <div
+            className="w-full max-w-3xl flex flex-col items-center text-center px-6 sm:px-12 py-10 sm:py-14 rounded-[24px]"
+            style={{
+              background: 'rgba(255, 255, 255, 0.18)',
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+              border: '1px solid rgba(255, 255, 255, 0.35)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(255, 255, 255, 0.15) inset',
+            }}
+          >
+            {/* Institutional Label / Badge */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded bg-white/90 border border-slate-300 text-[#0B1E36] text-xs font-semibold tracking-wide uppercase mb-6 shadow-2xs">
+              <GraduationCap className="w-4 h-4 text-[#0B1E36]" />
+              <span>Official Academic Platform • {brandingConfig.collegeName}</span>
+            </div>
 
-          {/* Large Editorial Academic Headline */}
-          <h1 className="font-serif-academic text-3xl sm:text-5xl md:text-6xl font-semibold text-[#0B1E36] tracking-tight leading-[1.15] max-w-4xl">
-            Intelligent Project Formation & Academic Collaboration Architecture
-          </h1>
+            {/* Large Editorial Academic Headline */}
+            <h1 className="font-serif-academic font-semibold text-[#0B1E36] tracking-tight leading-[1.15] max-w-4xl" style={{ fontSize: 'clamp(1.75rem, 4vw, 3.25rem)' }}>
+              Intelligent Project Formation & Academic Collaboration Architecture
+            </h1>
 
-          {/* Subtitle */}
-          <p className="mt-6 text-sm sm:text-base md:text-lg text-slate-700 max-w-2xl leading-relaxed font-normal">
-            An institution-grade platform connecting administration-authorized faculty mentors with student project teams through deterministic requirement analysis, structured milestones, and secure role-based collaboration.
-          </p>
+            {/* Subtitle */}
+            <p className="mt-6 text-sm sm:text-base md:text-lg text-slate-700 max-w-2xl leading-relaxed font-normal">
+              An institution-grade platform connecting administration-authorized faculty mentors with student project teams through deterministic requirement analysis, structured milestones, and secure role-based collaboration.
+            </p>
 
-          {/* Primary & Secondary Action CTAs */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => navigate(currentUser ? '/dashboard' : '/login')}
-              icon={<ArrowRight className="w-4 h-4" />}
-              iconPosition="right"
-              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white font-semibold text-sm px-6 py-3 shadow-sm rounded cursor-pointer"
-            >
-              {currentUser ? 'Enter Academic Workspace' : 'Sign In with College Credentials'}
-            </Button>
-            <a
-              href="#governance"
-              className="inline-flex items-center justify-center px-6 py-3 rounded text-sm font-semibold text-slate-800 bg-white/90 border border-slate-300 hover:bg-white hover:text-[#0B1E36] transition-colors shadow-2xs"
-            >
-              Platform Overview
-            </a>
+            {/* Primary & Secondary Action CTAs */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => navigate(currentUser ? '/dashboard' : '/login')}
+                icon={<ArrowRight className="w-4 h-4" />}
+                iconPosition="right"
+                className="bg-[#0B1E36] hover:bg-[#132c4e] text-white font-semibold text-sm px-6 py-3 shadow-sm rounded cursor-pointer"
+              >
+                {currentUser ? 'Enter Academic Workspace' : 'Sign In with College Credentials'}
+              </Button>
+              <a
+                href="#governance"
+                className="inline-flex items-center justify-center px-6 py-3 rounded text-sm font-semibold text-slate-800 bg-white/90 border border-slate-300 hover:bg-white hover:text-[#0B1E36] transition-colors shadow-2xs"
+              >
+                Platform Overview
+              </a>
+            </div>
           </div>
         </div>
       </section>
