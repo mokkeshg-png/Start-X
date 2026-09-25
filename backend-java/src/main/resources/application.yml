@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: Start-X Java Backend
+  datasource:
+    url: ${SUPABASE_DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${SUPABASE_DB_USERNAME:postgres}
+    password: ${SUPABASE_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Supabase ES256 asymmetric JWKS endpoint
+          jwk-set-uri: https://rrosugsevmwzcailipyd.supabase.co/auth/v1/.well-known/jwks.json
+          # Supabase JWT issuer — validated against the 'iss' claim in every token
+          issuer-uri: https://rrosugsevmwzcailipyd.supabase.co/auth/v1
+          # Supabase uses ES256 asymmetric signing
+          jws-algorithms: ES256
+
+app:
+  cors:
+    allowed-origins: ${FRONTEND_URL:http://localhost:5173}
+  supabase:
+    url: ${SUPABASE_URL:}
+    anon-key: ${SUPABASE_ANON_KEY:}
+    service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+    jwt-secret: ${JWT_SECRET:}
+
+logging:
+  level:
+    root: INFO
+    com.startx: DEBUG
