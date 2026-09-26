@@ -160,14 +160,14 @@ export function DiscussionAnalysisPanel({ discussionId, discussionTitle, teamId 
             {/* Topics */}
             {displayed.topics && displayed.topics.length > 0 && (
               <Section icon={<Tag className="w-3.5 h-3.5 text-indigo-400" />} title="Topics">
-                {displayed.topics.map((t, i) => (
+                {displayed.topics.map((t: any, i: number) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-indigo-500 mt-0.5">•</span>
                     <div>
                       <span className="text-xs text-slate-200 font-medium">{t.topic_name}</span>
                       {t.keywords && t.keywords.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-0.5">
-                          {t.keywords.slice(0, 4).map((kw, ki) => (
+                          {t.keywords.slice(0, 4).map((kw: string, ki: number) => (
                             <span key={ki} className="text-[10px] text-slate-500 bg-slate-800 rounded px-1">{kw}</span>
                           ))}
                         </div>
@@ -181,7 +181,7 @@ export function DiscussionAnalysisPanel({ discussionId, discussionTitle, teamId 
             {/* Decisions */}
             {displayed.decisions && displayed.decisions.length > 0 && (
               <Section icon={<CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />} title="Decisions">
-                {displayed.decisions.map((d, i) => (
+                {displayed.decisions.map((d: any, i: number) => (
                   <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
                     <CheckCircle2 className="w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" />
                     {d.decision_text}
@@ -193,7 +193,7 @@ export function DiscussionAnalysisPanel({ discussionId, discussionTitle, teamId 
             {/* Action Items */}
             {displayed.action_items && displayed.action_items.length > 0 && (
               <Section icon={<ListTodo className="w-3.5 h-3.5 text-amber-400" />} title="Action Items">
-                {displayed.action_items.map((a, i) => (
+                {displayed.action_items.map((a: any, i: number) => (
                   <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
                     <ListTodo className="w-3 h-3 text-amber-500 mt-0.5 flex-shrink-0" />
                     <div>
@@ -210,7 +210,7 @@ export function DiscussionAnalysisPanel({ discussionId, discussionTitle, teamId 
             {/* Blockers */}
             {displayed.blockers && displayed.blockers.length > 0 && (
               <Section icon={<AlertTriangle className="w-3.5 h-3.5 text-red-400" />} title="Blockers">
-                {displayed.blockers.map((b, i) => (
+                {displayed.blockers.map((b: string, i: number) => (
                   <li key={i} className="text-xs text-red-300 flex items-start gap-2">
                     <AlertTriangle className="w-3 h-3 text-red-500 mt-0.5 flex-shrink-0" />
                     {b}
@@ -222,7 +222,7 @@ export function DiscussionAnalysisPanel({ discussionId, discussionTitle, teamId 
             {/* Problems */}
             {displayed.problems && displayed.problems.length > 0 && (
               <Section icon={<AlertTriangle className="w-3.5 h-3.5 text-orange-400" />} title="Problems">
-                {displayed.problems.map((p, i) => (
+                {displayed.problems.map((p: string, i: number) => (
                   <li key={i} className="text-xs text-orange-300 flex items-start gap-2">
                     <span className="text-orange-500 mt-0.5 flex-shrink-0">•</span>
                     {p}

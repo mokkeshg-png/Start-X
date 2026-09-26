@@ -21,7 +21,8 @@ import {
   X,
   UserCheck,
   BadgeAlert,
-  ChevronRight
+  ChevronRight,
+  GraduationCap
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -38,7 +39,7 @@ import { clientStorage } from '../storage/clientStorage';
 import { aiEngine } from '../services/aiEngine';
 
 export const TeamCreationWizardPage: React.FC = () => {
-  const { currentUser, createProject, updateProject, finalizeProject, showToast } = useApp();
+  const { currentUser, createProject, updateProject, finalizeProject, showToast, brandingConfig } = useApp();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editProjectId = searchParams.get('edit');
@@ -87,10 +88,11 @@ export const TeamCreationWizardPage: React.FC = () => {
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
   const [aiReport, setAiReport] = useState<AIAnalysisResult | null>(null);
 
-  // Load existing project if editing
+  // Load registered students and existing project if editing
   useEffect(() => {
     const loadProject = async () => {
-      const students = clientStorage.getUsers().filter((u) => u.role === 'STUDENT');
+      const allUsers = clientStorage.getUsers();
+      const students = allUsers.filter((u) => u.role === 'STUDENT');
       setRegisteredStudents(students);
 
       if (editProjectId) {
@@ -185,7 +187,7 @@ export const TeamCreationWizardPage: React.FC = () => {
     setUploadedDocs(uploadedDocs.filter((_, i) => i !== index));
   };
 
-  // Student filtering
+  // Student filtering for Search
   const filteredStudents = registeredStudents.filter((student) => {
     if (!studentSearchQuery) return true;
     const q = studentSearchQuery.toLowerCase();
@@ -231,7 +233,6 @@ export const TeamCreationWizardPage: React.FC = () => {
   const handleRunAIAnalysis = () => {
     setIsAIAnalyzing(true);
     setTimeout(() => {
-      // Mock transient project for immediate live evaluation
       const allSelectedStudentIds = [
         ...(teamLeaderId ? [teamLeaderId] : []),
         ...memberIds.filter((id) => id !== teamLeaderId)
@@ -241,7 +242,6 @@ export const TeamCreationWizardPage: React.FC = () => {
       const finalCategory = customCategory.trim() || category;
       const finalType = customType.trim() || projectType;
 
-      // Extract skills from required skills + problem statement
       const derivedRequirements = [
         `Architecture & System Design (${finalType})`,
         ...requiredSkills.map((sk) => `${sk} Implementation`),
@@ -379,7 +379,7 @@ export const TeamCreationWizardPage: React.FC = () => {
         });
       }
 
-      // Finalize and activate project + notify students!
+      // Finalize and activate project
       await finalizeProject(targetProject.id);
 
       // Run AI analysis
@@ -409,28 +409,33 @@ export const TeamCreationWizardPage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex items-center justify-between text-white">
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-200">
+      {/* Header Banner */}
+      <div className="bg-[#0B1E36] p-6 sm:p-7 rounded-xl border border-[#0B1E36] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white shadow-xs">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-white">
+          <div className="flex items-center gap-2.5">
+            <GraduationCap className="w-6 h-6 text-slate-200" />
+            <h1 className="text-xl sm:text-2xl font-bold font-serif-academic text-white tracking-tight">
               {editProjectId ? 'Edit Project & Team Assignment' : 'Create Academic Project'}
             </h1>
-            <Badge variant="purple">Faculty Workflow</Badge>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Specify requirements, upload PRDs, search real registered students, assign roles, and run AI compatibility.
+          <p className="text-xs text-slate-300 mt-1.5 leading-relaxed max-w-2xl">
+            Institutional project creation workflow: specify problem requirements, upload PRDs, search verified students, designate project leaders, assign roles, and evaluate AI compatibility.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/dashboard')}
+          className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs shrink-0 self-start sm:self-auto"
+        >
           Exit Wizard
         </Button>
       </div>
 
       {/* Wizard Step Progress Tracker */}
-      <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 overflow-x-auto">
-        <div className="flex items-center justify-between min-w-[620px]">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs overflow-x-auto">
+        <div className="flex items-center justify-between min-w-[700px]">
           {steps.map((label, index) => {
             const stepNum = index + 1;
             const isCompleted = currentStep > stepNum;
@@ -444,21 +449,21 @@ export const TeamCreationWizardPage: React.FC = () => {
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                       isCompleted
-                        ? 'bg-emerald-600 text-white'
+                        ? 'bg-emerald-700 text-white'
                         : isCurrent
-                        ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/20'
-                        : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700'
+                        ? 'bg-[#0B1E36] text-white ring-4 ring-[#0B1E36]/15'
+                        : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
                     }`}
                   >
                     {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepNum}
                   </div>
                   <span
-                    className={`text-xs font-semibold whitespace-nowrap ${
+                    className={`text-xs whitespace-nowrap ${
                       isCurrent
-                        ? 'text-white'
+                        ? 'font-bold text-[#0B1E36]'
                         : isCompleted
-                        ? 'text-slate-300'
-                        : 'text-slate-500 group-hover:text-slate-400'
+                        ? 'font-semibold text-slate-700'
+                        : 'text-slate-500 group-hover:text-slate-700'
                     }`}
                   >
                     {label}
@@ -467,7 +472,7 @@ export const TeamCreationWizardPage: React.FC = () => {
                 {index < steps.length - 1 && (
                   <div
                     className={`flex-1 h-0.5 mx-2 ${
-                      currentStep > stepNum ? 'bg-emerald-600' : 'bg-slate-800'
+                      currentStep > stepNum ? 'bg-emerald-700' : 'bg-slate-200'
                     }`}
                   />
                 )}
@@ -479,17 +484,19 @@ export const TeamCreationWizardPage: React.FC = () => {
 
       {/* STEP 1: PROJECT DETAILS */}
       {currentStep === 1 && (
-        <Card className="p-6 space-y-5">
+        <Card className="p-6 sm:p-8 space-y-6 bg-white border border-slate-200 shadow-2xs rounded-xl">
           <div>
-            <h2 className="text-base font-bold text-white">Step 1: Project Details & Requirements</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h2 className="text-lg font-bold font-serif-academic text-[#0B1E36]">
+              Step 1: Project Details & Requirements
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
               Enter the core problem statement, classification, and required technical skills. All fields remain editable.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Project Name *
               </label>
               <input
@@ -498,34 +505,34 @@ export const TeamCreationWizardPage: React.FC = () => {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="e.g. Autonomous Campus Navigation & Robotics Platform"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Problem Statement & Overview *
               </label>
               <textarea
-                rows={3}
+                rows={4}
                 required
                 value={problemStatement}
                 onChange={(e) => setProblemStatement(e.target.value)}
-                placeholder="Describe the engineering challenge, technical objectives, and scope..."
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Describe the engineering challenge, technical objectives, and scope in detail..."
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Category */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Category
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
                 >
                   {PREDEFINED_CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -538,20 +545,20 @@ export const TeamCreationWizardPage: React.FC = () => {
                     value={customCategory}
                     onChange={(e) => setCustomCategory(e.target.value)}
                     placeholder="Type custom category..."
-                    className="w-full mt-2 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full mt-2 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
                   />
                 )}
               </div>
 
               {/* Project Type */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Project Type
                 </label>
                 <select
                   value={projectType}
                   onChange={(e) => setProjectType(e.target.value)}
-                  className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
                 >
                   {PREDEFINED_PROJECT_TYPES.map((t) => (
                     <option key={t} value={t}>{t}</option>
@@ -564,20 +571,20 @@ export const TeamCreationWizardPage: React.FC = () => {
                     value={customType}
                     onChange={(e) => setCustomType(e.target.value)}
                     placeholder="Type custom type..."
-                    className="w-full mt-2 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full mt-2 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
                   />
                 )}
               </div>
 
               {/* Duration */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Duration (Editable)
                 </label>
                 <select
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
                 >
                   {PREDEFINED_DURATIONS.map((d) => (
                     <option key={d} value={d}>{d}</option>
@@ -590,7 +597,7 @@ export const TeamCreationWizardPage: React.FC = () => {
                     value={customDuration}
                     onChange={(e) => setCustomDuration(e.target.value)}
                     placeholder="e.g. 5 Months"
-                    className="w-full mt-2 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full mt-2 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
                   />
                 )}
               </div>
@@ -598,10 +605,10 @@ export const TeamCreationWizardPage: React.FC = () => {
 
             {/* Required Skills */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Required Technical Skills & Competencies
               </label>
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 mb-2.5">
                 <input
                   type="text"
                   value={requiredSkillsInput}
@@ -614,16 +621,17 @@ export const TeamCreationWizardPage: React.FC = () => {
                     }
                   }}
                   placeholder="Type skill and press Add (e.g. React, Docker, Python)..."
-                  className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
                 />
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
                   onClick={() => {
                     handleAddSkill(requiredSkillsInput);
                     setRequiredSkillsInput('');
                   }}
+                  className="bg-[#0B1E36] hover:bg-[#132c4e] text-white"
                 >
                   Add Skill
                 </Button>
@@ -633,13 +641,13 @@ export const TeamCreationWizardPage: React.FC = () => {
                 {requiredSkills.map((sk) => (
                   <span
                     key={sk}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-950/80 border border-indigo-700/50 text-indigo-300 text-xs font-medium"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 text-xs font-medium"
                   >
                     {sk}
                     <button
                       type="button"
                       onClick={() => handleRemoveSkill(sk)}
-                      className="hover:text-red-400"
+                      className="hover:text-red-600 text-slate-400 transition-colors"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -649,7 +657,7 @@ export const TeamCreationWizardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-800">
+          <div className="flex justify-end pt-5 border-t border-slate-200">
             <Button
               variant="primary"
               onClick={() => {
@@ -661,6 +669,7 @@ export const TeamCreationWizardPage: React.FC = () => {
               }}
               icon={<ArrowRight className="w-4 h-4" />}
               iconPosition="right"
+              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white px-5 py-2.5 rounded-lg"
             >
               Continue to Document Upload
             </Button>
@@ -670,18 +679,20 @@ export const TeamCreationWizardPage: React.FC = () => {
 
       {/* STEP 2: UPLOAD PRD / DOCUMENTS */}
       {currentStep === 2 && (
-        <Card className="p-6 space-y-5">
+        <Card className="p-6 sm:p-8 space-y-6 bg-white border border-slate-200 shadow-2xs rounded-xl">
           <div>
-            <h2 className="text-base font-bold text-white">Step 2: Upload PRD & Requirement Documents</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h2 className="text-lg font-bold font-serif-academic text-[#0B1E36]">
+              Step 2: Upload PRD & Requirement Documents
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
               Upload project requirement documents, architectural specifications, or PRDs. AI will extract requirements for compatibility matching.
             </p>
           </div>
 
-          <div className="border-2 border-dashed border-slate-800 hover:border-indigo-500/60 rounded-2xl p-8 text-center bg-slate-950/40 transition-colors">
-            <Upload className="w-10 h-10 text-indigo-400 mx-auto mb-3" />
-            <p className="text-xs font-semibold text-white">Upload Requirement Files</p>
-            <p className="text-[11px] text-slate-400 mt-1">
+          <div className="border-2 border-dashed border-slate-300 hover:border-[#0B1E36] rounded-2xl p-8 text-center bg-slate-50 transition-colors">
+            <Upload className="w-10 h-10 text-[#0B1E36] mx-auto mb-3" />
+            <p className="text-xs font-bold text-slate-900 uppercase tracking-wider">Upload Requirement Files</p>
+            <p className="text-xs text-slate-500 mt-1">
               Supports PDF, DOCX, Markdown, Code schemas, ZIP, and images.
             </p>
             <label className="mt-4 inline-block">
@@ -691,30 +702,30 @@ export const TeamCreationWizardPage: React.FC = () => {
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <span className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors inline-block shadow-sm">
+              <span className="px-5 py-2.5 bg-[#0B1E36] hover:bg-[#132c4e] text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors inline-block shadow-xs">
                 Browse Files
               </span>
             </label>
           </div>
 
           {uploadedDocs.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+            <div className="space-y-2.5 pt-2">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Attached Documents ({uploadedDocs.length})
               </h3>
-              <div className="divide-y divide-slate-800/80 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden">
+              <div className="divide-y divide-slate-200 rounded-xl bg-white border border-slate-200 overflow-hidden shadow-2xs">
                 {uploadedDocs.map((doc, idx) => (
                   <div key={idx} className="p-3.5 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-950 border border-indigo-800/60 text-indigo-400 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 text-[#0B1E36] flex items-center justify-center">
                         <FileText className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-white">{doc.name}</div>
-                        <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                        <div className="text-xs font-bold text-slate-900">{doc.name}</div>
+                        <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
                           <span>{doc.size}</span>
                           <span>•</span>
-                          <span className={doc.analysisAvailable ? 'text-emerald-400 font-medium' : 'text-amber-400'}>
+                          <span className={doc.analysisAvailable ? 'text-emerald-700 font-medium' : 'text-amber-700'}>
                             {doc.note}
                           </span>
                         </div>
@@ -722,7 +733,7 @@ export const TeamCreationWizardPage: React.FC = () => {
                     </div>
                     <button
                       onClick={() => handleRemoveDoc(idx)}
-                      className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -732,7 +743,7 @@ export const TeamCreationWizardPage: React.FC = () => {
             </div>
           )}
 
-          <div className="flex justify-between pt-4 border-t border-slate-800">
+          <div className="flex justify-between pt-5 border-t border-slate-200">
             <Button variant="outline" onClick={() => setCurrentStep(1)} icon={<ArrowLeft className="w-4 h-4" />}>
               Back
             </Button>
@@ -741,6 +752,7 @@ export const TeamCreationWizardPage: React.FC = () => {
               onClick={() => setCurrentStep(3)}
               icon={<ArrowRight className="w-4 h-4" />}
               iconPosition="right"
+              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white"
             >
               Continue to Assign Team Leader
             </Button>
@@ -750,32 +762,34 @@ export const TeamCreationWizardPage: React.FC = () => {
 
       {/* STEP 3: ASSIGN TEAM LEADER */}
       {currentStep === 3 && (
-        <Card className="p-6 space-y-5">
+        <Card className="p-6 sm:p-8 space-y-6 bg-white border border-slate-200 shadow-2xs rounded-xl">
           <div>
-            <h2 className="text-base font-bold text-white">Step 3: Assign Team Leader</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Search real registered students and designate one as the Team Leader. Team Leader is a project-level role assignment, not a separate account type.
+            <h2 className="text-lg font-bold font-serif-academic text-[#0B1E36]">
+              Step 3: Assign Team Leader
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
+              Search verified registered students and designate one as the Team Leader. Team Leader is a project-level role assignment.
             </p>
           </div>
 
           {/* Student Search Box */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <input
               type="text"
               value={studentSearchQuery}
               onChange={(e) => setStudentSearchQuery(e.target.value)}
-              placeholder="Search by student name, email, permanent ID (STU-XXXX), or skill..."
-              className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Search by student name, email, permanent ID (e.g. ACT-CSE), department, or skill..."
+              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B1E36]/20 focus:border-[#0B1E36]"
             />
           </div>
 
           {registeredStudents.length === 0 ? (
-            <div className="p-8 text-center bg-slate-950/60 rounded-xl border border-slate-800 text-xs text-slate-400">
-              No registered students in system. Please have students register with an approved email or use the Admin portal to authorize student emails.
+            <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
+              No registered students in directory.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-96 overflow-y-auto pr-1">
               {filteredStudents.map((student) => {
                 const isLeader = teamLeaderId === student.id;
                 return (
@@ -783,37 +797,41 @@ export const TeamCreationWizardPage: React.FC = () => {
                     key={student.id}
                     className={`p-4 rounded-xl border transition-all text-left flex flex-col justify-between ${
                       isLeader
-                        ? 'bg-indigo-950/40 border-indigo-500 ring-2 ring-indigo-500/20'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        ? 'bg-blue-50/70 border-[#0B1E36] ring-2 ring-[#0B1E36]/20 shadow-xs'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-2xs'
                     }`}
                   >
                     <div>
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2.5">
                           <img
                             src={student.avatar}
                             alt={student.name}
-                            className="w-8 h-8 rounded-full bg-slate-800"
+                            className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 object-cover"
                           />
                           <div>
-                            <div className="font-bold text-xs text-white">{student.name}</div>
-                            <div className="text-[10px] font-mono text-indigo-400">
+                            <div className="font-bold text-xs text-[#0B1E36]">{student.name}</div>
+                            <div className="text-[10px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded w-fit mt-0.5">
                               {student.studentId || 'ID Pending'}
                             </div>
                           </div>
                         </div>
-                        {isLeader && <Badge variant="success">Assigned Leader</Badge>}
+                        {isLeader && (
+                          <span className="px-2 py-0.5 rounded bg-[#0B1E36] text-white text-[10px] font-semibold">
+                            Assigned Leader
+                          </span>
+                        )}
                       </div>
 
-                      <div className="text-[11px] text-slate-400 mb-2">
+                      <div className="text-xs text-slate-600 mb-2.5">
                         {student.department} • {student.year || '3rd Year'}
                       </div>
 
-                      <div className="flex flex-wrap gap-1 mb-3">
+                      <div className="flex flex-wrap gap-1.5 mb-3">
                         {(student.skills || []).slice(0, 4).map((sk) => (
                           <span
                             key={sk}
-                            className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300"
+                            className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] text-slate-700 font-medium"
                           >
                             {sk}
                           </span>
@@ -821,21 +839,22 @@ export const TeamCreationWizardPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => setSelectedStudentForView(student)}
-                        className="text-[10px] text-indigo-400 hover:underline"
+                        className="text-xs font-semibold text-[#0B1E36] hover:underline"
                       >
                         View Profile
                       </button>
                       <Button
                         type="button"
-                        variant={isLeader ? 'success' : 'outline'}
+                        variant={isLeader ? 'primary' : 'outline'}
                         size="xs"
                         onClick={() => handleSelectLeader(student)}
+                        className={isLeader ? 'bg-emerald-700 hover:bg-emerald-800 text-white' : 'border-slate-300 text-[#0B1E36] hover:bg-slate-50'}
                       >
-                        {isLeader ? 'Leader Selected' : 'Assign as Leader'}
+                        {isLeader ? '✓ Leader Selected' : 'Assign as Leader'}
                       </Button>
                     </div>
                   </div>
@@ -844,7 +863,7 @@ export const TeamCreationWizardPage: React.FC = () => {
             </div>
           )}
 
-          <div className="flex justify-between pt-4 border-t border-slate-800">
+          <div className="flex justify-between pt-5 border-t border-slate-200">
             <Button variant="outline" onClick={() => setCurrentStep(2)} icon={<ArrowLeft className="w-4 h-4" />}>
               Back
             </Button>
@@ -858,6 +877,7 @@ export const TeamCreationWizardPage: React.FC = () => {
               }}
               icon={<ArrowRight className="w-4 h-4" />}
               iconPosition="right"
+              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white"
             >
               Continue to Add Team Members
             </Button>
@@ -867,20 +887,23 @@ export const TeamCreationWizardPage: React.FC = () => {
 
       {/* STEP 4: ADD TEAM MEMBERS & ASSIGN ROLES */}
       {currentStep === 4 && (
-        <Card className="p-6 space-y-5">
+        <Card className="p-6 sm:p-8 space-y-6 bg-white border border-slate-200 shadow-2xs rounded-xl">
           <div>
-            <h2 className="text-base font-bold text-white">Step 4: Add Team Members & Assign Project Roles</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h2 className="text-lg font-bold font-serif-academic text-[#0B1E36]">
+              Step 4: Add Team Members & Assign Project Roles
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
               Select members from the registered student directory. Assign project-specific roles (predefined or custom typing).
             </p>
           </div>
 
           {/* Members Selection Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column: Student Search & Add */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Student Directory ({filteredStudents.length})
+            <div className="space-y-3 bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+              <h3 className="text-xs font-bold text-[#0B1E36] uppercase tracking-wider flex items-center justify-between">
+                <span>Student Directory</span>
+                <span className="text-[11px] font-mono text-slate-500">({filteredStudents.length} available)</span>
               </h3>
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
@@ -888,8 +911,8 @@ export const TeamCreationWizardPage: React.FC = () => {
                   type="text"
                   value={studentSearchQuery}
                   onChange={(e) => setStudentSearchQuery(e.target.value)}
-                  placeholder="Search registered students..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Search students by name, dept, skill..."
+                  className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B1E36]"
                 />
               </div>
 
@@ -902,37 +925,40 @@ export const TeamCreationWizardPage: React.FC = () => {
                   return (
                     <div
                       key={student.id}
-                      className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                      className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition-colors ${
                         isAssigned
-                          ? 'bg-slate-900 border-indigo-500/60'
-                          : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                          ? 'bg-blue-50/60 border-blue-300'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 overflow-hidden">
                         <img
                           src={student.avatar}
                           alt={student.name}
-                          className="w-7 h-7 rounded-full bg-slate-800 flex-shrink-0"
+                          className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex-shrink-0 object-cover"
                         />
                         <div className="truncate">
-                          <span className="font-semibold text-white block truncate">{student.name}</span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {student.studentId || 'ID Pending'}
+                          <span className="font-bold text-slate-900 block truncate">{student.name}</span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {student.studentId || 'ID Pending'} • {student.department}
                           </span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {isLeader ? (
-                          <Badge variant="purple">Leader</Badge>
+                          <span className="px-2 py-0.5 rounded bg-[#0B1E36] text-white text-[10px] font-bold">
+                            Leader
+                          </span>
                         ) : (
                           <Button
                             type="button"
                             size="xs"
-                            variant={isMember ? 'danger' : 'secondary'}
+                            variant={isMember ? 'danger' : 'primary'}
                             onClick={() => handleToggleMember(student)}
+                            className={isMember ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100' : 'bg-[#0B1E36] text-white hover:bg-[#132c4e]'}
                           >
-                            {isMember ? 'Remove' : 'Add Member'}
+                            {isMember ? 'Remove' : '+ Add Member'}
                           </Button>
                         )}
                       </div>
@@ -943,14 +969,15 @@ export const TeamCreationWizardPage: React.FC = () => {
             </div>
 
             {/* Right Column: Assigned Roster & Role Assignment */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Assigned Team Roster ({allAssignedStudents.length})
+            <div className="space-y-3 bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-2xs">
+              <h3 className="text-xs font-bold text-[#0B1E36] uppercase tracking-wider flex items-center justify-between">
+                <span>Assigned Team Roster</span>
+                <span className="text-[11px] font-mono text-slate-500">({allAssignedStudents.length} Assigned)</span>
               </h3>
 
               {allAssignedStudents.length === 0 ? (
-                <div className="p-8 text-center bg-slate-950/60 rounded-xl border border-slate-800 text-xs text-slate-400">
-                  No members added yet. Add students from the directory on the left.
+                <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-xs text-slate-500">
+                  No members assigned yet. Add students from the directory on the left.
                 </div>
               ) : (
                 <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
@@ -963,23 +990,27 @@ export const TeamCreationWizardPage: React.FC = () => {
                     return (
                       <div
                         key={id}
-                        className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs"
+                        className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2 text-xs shadow-2xs"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <img
                               src={student.avatar}
                               alt={student.name}
-                              className="w-6 h-6 rounded-full bg-slate-800"
+                              className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 object-cover"
                             />
-                            <span className="font-bold text-white">{student.name}</span>
-                            {isLeader && <Badge variant="purple">Leader</Badge>}
+                            <span className="font-bold text-slate-900">{student.name}</span>
+                            {isLeader && (
+                              <span className="px-2 py-0.5 rounded bg-[#0B1E36] text-white text-[10px] font-bold">
+                                Leader
+                              </span>
+                            )}
                           </div>
                           {!isLeader && (
                             <button
                               type="button"
                               onClick={() => handleToggleMember(student)}
-                              className="text-[10px] text-red-400 hover:underline"
+                              className="text-xs text-red-600 hover:underline font-semibold"
                             >
                               Remove
                             </button>
@@ -988,8 +1019,8 @@ export const TeamCreationWizardPage: React.FC = () => {
 
                         {/* Role selector + custom typing */}
                         <div>
-                          <label className="text-[10px] text-slate-400 font-semibold block mb-1">
-                            Assigned Project Role
+                          <label className="text-[11px] text-slate-600 font-bold block mb-1">
+                            Assigned Role on Project:
                           </label>
                           <div className="grid grid-cols-2 gap-2">
                             <select
@@ -1001,7 +1032,7 @@ export const TeamCreationWizardPage: React.FC = () => {
                                   handleRoleChange(id, e.target.value);
                                 }
                               }}
-                              className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0B1E36]"
                             >
                               {isLeader && <option value="Team Leader">Team Leader</option>}
                               {PREDEFINED_PROJECT_ROLES.map((r) => (
@@ -1015,7 +1046,7 @@ export const TeamCreationWizardPage: React.FC = () => {
                               value={currentRole}
                               onChange={(e) => handleRoleChange(id, e.target.value)}
                               placeholder="Type custom role..."
-                              className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0B1E36]"
                             />
                           </div>
                         </div>
@@ -1027,7 +1058,7 @@ export const TeamCreationWizardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-between pt-4 border-t border-slate-800">
+          <div className="flex justify-between pt-5 border-t border-slate-200">
             <Button variant="outline" onClick={() => setCurrentStep(3)} icon={<ArrowLeft className="w-4 h-4" />}>
               Back
             </Button>
@@ -1039,6 +1070,7 @@ export const TeamCreationWizardPage: React.FC = () => {
               }}
               icon={<ArrowRight className="w-4 h-4" />}
               iconPosition="right"
+              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white"
             >
               Run AI Team Compatibility Analysis
             </Button>
@@ -1048,68 +1080,71 @@ export const TeamCreationWizardPage: React.FC = () => {
 
       {/* STEP 5: AI COMPATIBILITY ANALYSIS */}
       {currentStep === 5 && (
-        <Card className="p-6 space-y-6">
-          <div className="flex items-start justify-between">
+        <Card className="p-6 sm:p-8 space-y-6 bg-white border border-slate-200 shadow-2xs rounded-xl">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-indigo-400" />
-                <h2 className="text-base font-bold text-white">Step 5: AI Project + Team Analysis</h2>
-                <Badge variant="ai">Deterministic Runtime Engine</Badge>
+                <Brain className="w-5 h-5 text-[#0B1E36]" />
+                <h2 className="text-lg font-bold font-serif-academic text-[#0B1E36]">
+                  Step 5: AI Project + Team Analysis
+                </h2>
+                <Badge variant="info">Deterministic Engine</Badge>
               </div>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Derived directly from actual uploaded PRD documents, problem statements, and real registered student profiles.
               </p>
             </div>
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={handleRunAIAnalysis}
               isLoading={isAIAnalyzing}
-              icon={<Sparkles className="w-4 h-4 text-cyan-400" />}
+              icon={<Sparkles className="w-4 h-4 text-[#0B1E36]" />}
+              className="border-slate-300 text-[#0B1E36] hover:bg-slate-50"
             >
               Re-Analyze
             </Button>
           </div>
 
           {isAIAnalyzing ? (
-            <div className="py-16 text-center space-y-3">
-              <Sparkles className="w-10 h-10 text-indigo-400 animate-spin mx-auto" />
-              <p className="text-xs text-slate-300 font-semibold">Running multi-factor compatibility evaluation...</p>
-              <p className="text-[11px] text-slate-500">Cross-referencing PRD requirements with student competencies</p>
+            <div className="py-16 text-center space-y-3 bg-slate-50 rounded-xl border border-slate-200">
+              <Sparkles className="w-10 h-10 text-[#0B1E36] animate-spin mx-auto" />
+              <p className="text-xs text-slate-800 font-bold">Running multi-factor compatibility evaluation...</p>
+              <p className="text-xs text-slate-500">Cross-referencing PRD requirements with student competencies</p>
             </div>
           ) : aiReport ? (
             <div className="space-y-6">
               {/* Score Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center shadow-2xs">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1 font-bold">
                     Overall Compatibility
                   </span>
-                  <span className="text-2xl font-black text-indigo-400">
+                  <span className="text-3xl font-black text-[#0B1E36] font-serif-academic">
                     {aiReport.overallCompatibility}%
                   </span>
                 </div>
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center shadow-2xs">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1 font-bold">
                     Requirement Coverage
                   </span>
-                  <span className="text-2xl font-black text-emerald-400">
+                  <span className="text-3xl font-black text-emerald-700 font-serif-academic">
                     {aiReport.requirementCoverage}%
                   </span>
                 </div>
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center shadow-2xs">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1 font-bold">
                     Role Alignment
                   </span>
-                  <span className="text-2xl font-black text-cyan-400">
+                  <span className="text-3xl font-black text-blue-800 font-serif-academic">
                     {aiReport.roleAlignment}%
                   </span>
                 </div>
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center shadow-2xs">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1 font-bold">
                     Missing Skills
                   </span>
-                  <span className="text-2xl font-black text-amber-400">
+                  <span className="text-3xl font-black text-amber-700 font-serif-academic">
                     {aiReport.missingSkills.length}
                   </span>
                 </div>
@@ -1117,31 +1152,31 @@ export const TeamCreationWizardPage: React.FC = () => {
 
               {/* Requirement & Role Breakdown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <h4 className="text-xs font-bold text-[#0B1E36] uppercase tracking-wider">
                     Skills Covered vs Missing
                   </h4>
-                  <div className="space-y-1.5 text-xs">
+                  <div className="space-y-2 text-xs">
                     <div>
-                      <span className="text-[11px] text-slate-400 block mb-1">Covered Skills:</span>
+                      <span className="text-[11px] text-slate-600 block mb-1 font-semibold">Covered Skills:</span>
                       <div className="flex flex-wrap gap-1.5">
                         {aiReport.coveredSkills.length > 0 ? (
                           aiReport.coveredSkills.map((sk) => (
-                            <span key={sk} className="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/40 text-[10px]">
+                            <span key={sk} className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold">
                               ✓ {sk}
                             </span>
                           ))
                         ) : (
-                          <span className="text-slate-500 text-[10px]">None covered yet</span>
+                          <span className="text-slate-400 text-[10px]">None covered yet</span>
                         )}
                       </div>
                     </div>
                     {aiReport.missingSkills.length > 0 && (
-                      <div className="pt-2">
-                        <span className="text-[11px] text-amber-400 block mb-1">Missing Gaps:</span>
+                      <div className="pt-2 border-t border-slate-200">
+                        <span className="text-[11px] text-amber-800 block mb-1 font-semibold">Missing Gaps:</span>
                         <div className="flex flex-wrap gap-1.5">
                           {aiReport.missingSkills.map((sk) => (
-                            <span key={sk} className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-800/40 text-[10px]">
+                            <span key={sk} className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold">
                               ⚠ {sk}
                             </span>
                           ))}
@@ -1151,19 +1186,19 @@ export const TeamCreationWizardPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <h4 className="text-xs font-bold text-[#0B1E36] uppercase tracking-wider">
                     Assigned Roles & Alignment
                   </h4>
                   <div className="space-y-2 text-xs">
                     {aiReport.memberAnalysis.map((ma) => (
-                      <div key={ma.studentId} className="flex items-center justify-between text-[11px] border-b border-slate-800/60 pb-1">
+                      <div key={ma.studentId} className="flex items-center justify-between text-xs border-b border-slate-200 pb-1.5">
                         <div>
-                          <span className="text-white font-semibold">{ma.studentName}</span>
-                          <span className="text-slate-400 text-[10px] ml-1.5">({ma.assignedRole})</span>
+                          <span className="text-slate-900 font-bold">{ma.studentName}</span>
+                          <span className="text-slate-500 text-[11px] ml-1.5">({ma.assignedRole})</span>
                         </div>
-                        <span className={ma.roleMatch ? 'text-emerald-400 font-medium' : 'text-amber-400'}>
-                          {ma.roleMatch ? 'Strong Fit' : 'Skill Gap'}
+                        <span className={ma.roleMatch ? 'text-emerald-700 font-bold text-[11px]' : 'text-amber-700 font-bold text-[11px]'}>
+                          {ma.roleMatch ? '✓ Strong Fit' : '⚠ Skill Gap'}
                         </span>
                       </div>
                     ))}
@@ -1172,14 +1207,14 @@ export const TeamCreationWizardPage: React.FC = () => {
               </div>
 
               {/* Explainable Reasoning */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                <h4 className="text-xs font-bold text-[#0B1E36] uppercase tracking-wider">
                   AI Assessment & Findings
                 </h4>
-                <ul className="space-y-1.5 text-xs text-slate-300">
+                <ul className="space-y-1.5 text-xs text-slate-700">
                   {aiReport.explanations.map((exp, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-indigo-400">•</span>
+                      <span className="text-[#0B1E36] font-bold">•</span>
                       <span>{exp}</span>
                     </li>
                   ))}
@@ -1188,7 +1223,7 @@ export const TeamCreationWizardPage: React.FC = () => {
             </div>
           ) : null}
 
-          <div className="flex justify-between pt-4 border-t border-slate-800">
+          <div className="flex justify-between pt-5 border-t border-slate-200">
             <Button variant="outline" onClick={() => setCurrentStep(4)} icon={<ArrowLeft className="w-4 h-4" />}>
               Back to Team Roles
             </Button>
@@ -1197,6 +1232,7 @@ export const TeamCreationWizardPage: React.FC = () => {
               onClick={() => setCurrentStep(6)}
               icon={<ArrowRight className="w-4 h-4" />}
               iconPosition="right"
+              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white"
             >
               Proceed to Final Review
             </Button>
@@ -1206,52 +1242,54 @@ export const TeamCreationWizardPage: React.FC = () => {
 
       {/* STEP 6: REVIEW & FINALIZE */}
       {currentStep === 6 && (
-        <Card className="p-6 space-y-6">
+        <Card className="p-6 sm:p-8 space-y-6 bg-white border border-slate-200 shadow-2xs rounded-xl">
           <div>
-            <h2 className="text-base font-bold text-white">Step 6: Review & Finalize Project</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h2 className="text-lg font-bold font-serif-academic text-[#0B1E36]">
+              Step 6: Review & Finalize Project
+            </h2>
+            <p className="text-xs text-slate-600 mt-1">
               Review project specifications and assigned members. Finalizing activates the project and sends assignment notifications to all students.
             </p>
           </div>
 
-          <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
-            <div className="flex items-start justify-between">
+          <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 space-y-4 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
               <div>
-                <span className="font-mono text-xs text-indigo-400 font-bold block mb-1">
+                <span className="font-mono text-xs text-[#0B1E36] font-bold block mb-1">
                   PROJECT ID: {editProjectId || 'PRJ-AUTO-GENERATED'}
                 </span>
-                <h3 className="text-base font-bold text-white">{projectName}</h3>
-                <p className="text-xs text-slate-400 mt-1">{problemStatement}</p>
+                <h3 className="text-base font-bold text-slate-900">{projectName}</h3>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">{problemStatement}</p>
               </div>
-              <Badge variant="purple">{projectType}</Badge>
+              <Badge variant="info">{projectType}</Badge>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-800/80 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-200 text-xs">
               <div>
-                <span className="text-slate-500 block text-[10px]">Category</span>
-                <span className="text-white font-medium">{customCategory.trim() || category}</span>
+                <span className="text-slate-500 block text-[10px] font-bold uppercase">Category</span>
+                <span className="text-slate-900 font-semibold">{customCategory.trim() || category}</span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Duration</span>
-                <span className="text-white font-medium">{customDuration.trim() || duration}</span>
+                <span className="text-slate-500 block text-[10px] font-bold uppercase">Duration</span>
+                <span className="text-slate-900 font-semibold">{customDuration.trim() || duration}</span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Team Leader</span>
-                <span className="text-emerald-400 font-medium">
+                <span className="text-slate-500 block text-[10px] font-bold uppercase">Team Leader</span>
+                <span className="text-emerald-700 font-bold">
                   {registeredStudents.find((s) => s.id === teamLeaderId)?.name || 'Unassigned'}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Team Roster</span>
-                <span className="text-white font-medium">{allAssignedStudents.length} Students</span>
+                <span className="text-slate-500 block text-[10px] font-bold uppercase">Team Roster</span>
+                <span className="text-slate-900 font-semibold">{allAssignedStudents.length} Students</span>
               </div>
             </div>
 
             <div className="pt-2">
-              <span className="text-slate-500 block text-[10px] mb-1.5">Required Skills:</span>
+              <span className="text-slate-500 block text-[10px] font-bold uppercase mb-1.5">Required Skills:</span>
               <div className="flex flex-wrap gap-1.5">
                 {requiredSkills.map((sk) => (
-                  <span key={sk} className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-300">
+                  <span key={sk} className="px-2.5 py-0.5 rounded bg-white border border-slate-200 text-xs text-slate-700 font-medium">
                     {sk}
                   </span>
                 ))}
@@ -1259,22 +1297,22 @@ export const TeamCreationWizardPage: React.FC = () => {
             </div>
 
             <div className="pt-2">
-              <span className="text-slate-500 block text-[10px] mb-1.5">PRD / Uploaded Files:</span>
+              <span className="text-slate-500 block text-[10px] font-bold uppercase mb-1.5">PRD / Uploaded Files:</span>
               <div className="flex flex-wrap gap-2">
                 {uploadedDocs.length > 0 ? (
                   uploadedDocs.map((doc, idx) => (
-                    <span key={idx} className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[10px] text-indigo-300 flex items-center gap-1.5">
-                      <File className="w-3 h-3" /> {doc.name}
+                    <span key={idx} className="px-2.5 py-1 rounded bg-white border border-slate-200 text-xs text-[#0B1E36] font-medium flex items-center gap-1.5">
+                      <File className="w-3.5 h-3.5" /> {doc.name}
                     </span>
                   ))
                 ) : (
-                  <span className="text-[10px] text-slate-500">No documents attached</span>
+                  <span className="text-xs text-slate-400">No documents attached</span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex justify-between pt-4 border-t border-slate-800">
+          <div className="flex justify-between pt-5 border-t border-slate-200">
             <Button variant="outline" onClick={() => setCurrentStep(5)} icon={<ArrowLeft className="w-4 h-4" />}>
               Back
             </Button>
@@ -1284,6 +1322,7 @@ export const TeamCreationWizardPage: React.FC = () => {
               isLoading={isSubmitting}
               onClick={handleSaveAndFinalize}
               icon={<CheckCircle2 className="w-4 h-4" />}
+              className="bg-[#0B1E36] hover:bg-[#132c4e] text-white px-6 py-2.5"
             >
               FINALIZE & ACTIVATE PROJECT
             </Button>
@@ -1293,13 +1332,13 @@ export const TeamCreationWizardPage: React.FC = () => {
 
       {/* Student Profile Quick View Modal */}
       {selectedStudentForView && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-white">Student Profile</h3>
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl text-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-sm font-bold font-serif-academic text-[#0B1E36]">Student Profile</h3>
               <button
                 onClick={() => setSelectedStudentForView(null)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-700"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1309,35 +1348,35 @@ export const TeamCreationWizardPage: React.FC = () => {
               <img
                 src={selectedStudentForView.avatar}
                 alt={selectedStudentForView.name}
-                className="w-12 h-12 rounded-full bg-slate-800"
+                className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 object-cover"
               />
               <div>
-                <h4 className="text-sm font-bold text-white">{selectedStudentForView.name}</h4>
-                <p className="text-xs text-indigo-400 font-mono">
+                <h4 className="text-sm font-bold text-slate-900">{selectedStudentForView.name}</h4>
+                <p className="text-xs text-[#0B1E36] font-mono font-semibold">
                   {selectedStudentForView.studentId || 'ID Pending'}
                 </p>
-                <p className="text-[11px] text-slate-400">{selectedStudentForView.email}</p>
+                <p className="text-xs text-slate-500">{selectedStudentForView.email}</p>
               </div>
             </div>
 
-            <div className="text-xs text-slate-300 space-y-1">
+            <div className="text-xs text-slate-700 space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
               <p><strong>Department:</strong> {selectedStudentForView.department}</p>
               <p><strong>Year:</strong> {selectedStudentForView.year || '3rd Year'}</p>
               {selectedStudentForView.bio && <p><strong>Bio:</strong> {selectedStudentForView.bio}</p>}
             </div>
 
             <div>
-              <span className="text-[10px] text-slate-400 font-bold block mb-1 uppercase">Skills:</span>
-              <div className="flex flex-wrap gap-1">
+              <span className="text-[10px] text-slate-500 font-bold block mb-1 uppercase tracking-wider">Skills:</span>
+              <div className="flex flex-wrap gap-1.5">
                 {(selectedStudentForView.skills || []).map((sk) => (
-                  <span key={sk} className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-200">
+                  <span key={sk} className="px-2.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-xs text-slate-800 font-medium">
                     {sk}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="flex justify-end pt-3 border-t border-slate-800">
+            <div className="flex justify-end pt-3 border-t border-slate-200">
               <Button size="sm" variant="outline" onClick={() => setSelectedStudentForView(null)}>
                 Close
               </Button>

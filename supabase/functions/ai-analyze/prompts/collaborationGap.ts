@@ -43,21 +43,24 @@ export async function buildCollaborationGapPrompt(ctx: PromptContext): Promise<P
     .eq("is_resolved", false);
 
   // ── Latest discussion analysis ─────────────────────────────────────────────
-  const { data: latestDiscAnalysis } = await supabase
-    .from("discussion_analysis")
-    .select("problems, unresolved_issues: action_items, analyzed_at")
-    .in(
-      "discussion_id",
-      (
-        await supabase
-          .from("discussions")
-          .select("discussion_id")
-          .eq("team_id", ctx.teamId)
-      ).data?.map((d: any) => d.discussion_id) ?? []
-    )
-    .order("analyzed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const { data: teamDiscsForGap } = await supabase
+    .from("discussions")
+    .select("discussion_id")
+    .eq("team_id", ctx.teamId);
+
+  const discIdsForGap = (teamDiscsForGap ?? []).map((d: any) => d.discussion_id as string);
+
+  let latestDiscAnalysis: any = null;
+  if (discIdsForGap.length > 0) {
+    const { data } = await supabase
+      .from("discussion_analysis")
+      .select("problems, unresolved_issues: action_items, analyzed_at")
+      .in("discussion_id", discIdsForGap)
+      .order("analyzed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    latestDiscAnalysis = data ?? null;
+  }
 
   const systemPrompt = `You are an expert collaboration analyst for a college project platform.
 Detect real collaboration gaps in a team. Return ONLY valid JSON:

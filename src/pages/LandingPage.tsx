@@ -150,34 +150,42 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Horizontal Full-Width Navy Statistics / Trust Section */}
+      {/* 3. Horizontal Full-Width Navy Key Features Section */}
       <section className="bg-[#0B1E36] text-white py-12 px-6 sm:px-10 border-y border-[#081526] shadow-inner">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div className="flex flex-col items-center">
-            <span className="font-serif-academic text-3xl sm:text-4xl font-bold tracking-tight text-white">4</span>
+            <span className="font-serif-academic text-3xl sm:text-4xl font-bold tracking-tight text-white">
+              <GraduationCap className="w-8 h-8 mx-auto mb-1 text-indigo-300" />
+            </span>
             <span className="mt-1 text-xs font-semibold text-slate-300 tracking-wider uppercase">
-              Academic Departments
+              Student Teams
             </span>
           </div>
 
           <div className="flex flex-col items-center">
-            <span className="font-serif-academic text-3xl sm:text-4xl font-bold tracking-tight text-white">50+</span>
+            <span className="font-serif-academic text-3xl sm:text-4xl font-bold tracking-tight text-white">
+              <Brain className="w-8 h-8 mx-auto mb-1 text-indigo-300" />
+            </span>
             <span className="mt-1 text-xs font-semibold text-slate-300 tracking-wider uppercase">
-              Project Teams Formed
+              AI-Powered Analysis
             </span>
           </div>
 
           <div className="flex flex-col items-center">
-            <span className="font-serif-academic text-3xl sm:text-4xl font-bold tracking-tight text-white">94%</span>
+            <span className="font-serif-academic text-3xl sm:text-4xl font-bold tracking-tight text-white">
+              <FileCheck2 className="w-8 h-8 mx-auto mb-1 text-indigo-300" />
+            </span>
             <span className="mt-1 text-xs font-semibold text-slate-300 tracking-wider uppercase">
-              Skill Match Accuracy
+              PRD Intelligence
             </span>
           </div>
 
           <div className="flex flex-col items-center">
-            <span className="font-serif-academic text-3xl sm:text-4xl font-bold tracking-tight text-white">100%</span>
+            <span className="font-serif-academic text-3xl sm:text-4xl font-bold tracking-tight text-white">
+              <ShieldCheck className="w-8 h-8 mx-auto mb-1 text-indigo-300" />
+            </span>
             <span className="mt-1 text-xs font-semibold text-slate-300 tracking-wider uppercase">
-              PRD Explainability
+              Role-Based Access
             </span>
           </div>
         </div>

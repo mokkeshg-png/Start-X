@@ -1,22 +1,53 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../lib/supabase';
 
 export const ForgotPasswordPage: React.FC = () => {
   const { brandingConfig } = useApp();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return;
+
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    setErrorMsg('');
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        // Redirect back to the app after the user clicks the email link.
+        // Supabase will append a token; the user lands on /login where they
+        // can then set a new password using supabase.auth.updateUser().
+        redirectTo: `${window.location.origin}/login?type=recovery`,
+      });
+
+      if (error) {
+        // Supabase returns an error if the email format is wrong,
+        // but deliberately does NOT reveal whether the address is registered
+        // (prevents user-enumeration). We surface only format/config errors.
+        if (error.message.toLowerCase().includes('invalid')) {
+          setErrorMsg('Please enter a valid email address.');
+        } else {
+          // For all other errors (rate limit, config issues) show a safe generic message.
+          setErrorMsg('Unable to send reset email. Please try again in a few minutes.');
+        }
+        return;
+      }
+
+      // Always show success — Supabase does not reveal whether the email exists.
       setSubmitted(true);
-    }, 400);
+    } catch {
+      setErrorMsg('A network error occurred. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -30,16 +61,16 @@ export const ForgotPasswordPage: React.FC = () => {
             Reset Institutional Password
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Enter your authorized college email address to receive password reset instructions.
+            Enter your authorized college email address. If it is registered, you will receive reset instructions.
           </p>
         </div>
 
         {submitted ? (
           <div className="p-4 rounded bg-emerald-50 border border-emerald-200 text-center space-y-3">
             <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-            <h3 className="text-sm font-bold text-emerald-900">Reset Instructions Dispatched</h3>
+            <h3 className="text-sm font-bold text-emerald-900">Reset Instructions Sent</h3>
             <p className="text-xs text-slate-700">
-              We sent password recovery instructions to <span className="font-semibold text-slate-900">{email}</span>.
+              If <span className="font-semibold text-slate-900">{email}</span> is registered on this platform, you will receive a password reset link shortly. Check your inbox and spam folder.
             </p>
             <Link
               to="/login"
@@ -61,11 +92,18 @@ export const ForgotPasswordPage: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@act.edu"
+                  placeholder={`student@${brandingConfig.collegeShortName?.toLowerCase() || 'college'}.edu`}
                   className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#0B1E36]"
                 />
               </div>
             </div>
+
+            {errorMsg && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
             <Button
               type="submit"

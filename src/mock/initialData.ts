@@ -1,6 +1,9 @@
 import { CollegeBrandingConfig } from '../types';
 
-// Only system configuration constants — NO mock business data
+// ============================================================
+// System configuration constants ONLY.
+// NO mock users, NO fake projects, NO hardcoded business data.
+// ============================================================
 export const INITIAL_BRANDING: CollegeBrandingConfig = {
   collegeName: "AGNI COLLEGE OF TECHNOLOGY",
   collegeShortName: "ACT",

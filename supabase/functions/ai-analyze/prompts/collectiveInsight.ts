@@ -44,20 +44,24 @@ export async function buildCollectiveInsightPrompt(ctx: PromptContext): Promise<
     .maybeSingle();
 
   // ── Latest discussion analysis ─────────────────────────────────────────────
-  const { data: discAnalysis } = await supabase
-    .from("discussion_analysis")
-    .select("topics, decisions, action_items, analyzed_at")
-    .in(
-      "discussion_id",
-      (
-        await supabase
-          .from("discussions")
-          .select("discussion_id")
-          .eq("team_id", ctx.teamId)
-      ).data?.map((d: any) => d.discussion_id) ?? []
-    )
-    .order("analyzed_at", { ascending: false })
-    .limit(3);
+  // Step 1: get discussion IDs for this team
+  const { data: teamDiscs } = await supabase
+    .from("discussions")
+    .select("discussion_id")
+    .eq("team_id", ctx.teamId);
+
+  const discIds = (teamDiscs ?? []).map((d: any) => d.discussion_id as string);
+
+  let discAnalysis: any[] = [];
+  if (discIds.length > 0) {
+    const { data } = await supabase
+      .from("discussion_analysis")
+      .select("topics, decisions, action_items, analyzed_at")
+      .in("discussion_id", discIds)
+      .order("analyzed_at", { ascending: false })
+      .limit(3);
+    discAnalysis = data ?? [];
+  }
 
   // ── Open collaboration gaps ────────────────────────────────────────────────
   const { data: gaps } = await supabase

@@ -14,12 +14,23 @@ export const SettingsPage: React.FC = () => {
 
   const handleSaveBranding = (e: React.FormEvent) => {
     e.preventDefault();
-    setBrandingConfig({
+    const updated = {
       ...brandingConfig,
       collegeName,
       platformName,
-      logoText
-    });
+      logoText,
+      collegeShortName: brandingConfig.collegeShortName,
+      tagline: platformName,
+      primaryColor: brandingConfig.primaryColor,
+      accentColor: brandingConfig.accentColor,
+    };
+    setBrandingConfig(updated);
+    // Persist to localStorage so branding survives a page refresh
+    try {
+      localStorage.setItem('startx_branding_v3', JSON.stringify(updated));
+    } catch {
+      // ignore storage errors
+    }
     showToast("Branding Updated", "Global college branding tokens modified successfully.", "success");
   };
 

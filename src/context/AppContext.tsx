@@ -16,6 +16,7 @@ import { INITIAL_BRANDING } from '../mock/initialData';
 import { apiService } from '../services/apiService';
 import { authService, LoginCredentials, RegisterPayload } from '../services/authService';
 import { clientStorage } from '../storage/clientStorage';
+import { supabase } from '../lib/supabase';
 
 interface ToastInfo {
   id: string;
@@ -102,7 +103,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
   const [theme, setThemeState] = useState<'light' | 'dark'>('light');
-  const [brandingConfig, setBrandingConfig] = useState<CollegeBrandingConfig>(INITIAL_BRANDING);
+  const [brandingConfig, setBrandingConfig] = useState<CollegeBrandingConfig>(() => {
+    // Restore persisted branding config from localStorage
+    try {
+      const stored = localStorage.getItem('startx_branding_v3');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.collegeName) return parsed as CollegeBrandingConfig;
+      }
+    } catch { /* ignore */ }
+    return INITIAL_BRANDING;
+  });
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>('');
@@ -122,6 +133,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const setCurrentUser = (u: User | null) => {
     setCurrentUserState(u);
+    // Only persist the session user — not business data
     clientStorage.saveCurrentUser(u);
   };
 
@@ -202,6 +214,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
+  // Supabase Realtime — subscribe to new notifications for the current user
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel(`notifications:${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${currentUser.id}`,
+        },
+        (payload) => {
+          const n = payload.new as Record<string, unknown>;
+          const newNotif: NotificationItem = {
+            id: n.notification_id as string,
+            userId: currentUser.id,
+            title: n.title as string,
+            description: (n.body as string) || '',
+            category: 'SYSTEM',
+            timestamp: n.created_at as string,
+            read: false,
+            actionUrl: (n.data as any)?.action_url,
+            projectId: (n.data as any)?.project_id,
+            projectName: (n.data as any)?.project_name,
+          };
+          setNotifications((prev) => [newNotif, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.id]);
+
   const refreshData = async () => {
     if (!currentUser) {
       setProjects([]);
@@ -216,34 +266,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setIsLoading(true);
     try {
-      const [projList, authList, notifList, reqList, logList] = await Promise.all([
+      const [projList, notifList, reqList] = await Promise.all([
         apiService.getProjects(currentUser),
-        apiService.getAuthorizedEmails(),
         apiService.getNotifications(currentUser.id),
         apiService.getCollaborationRequests(currentUser.id),
-        apiService.getActivityLogs()
       ]);
 
       setProjects(projList);
-      setAuthorizedEmails(authList);
       setNotifications(notifList);
       setRequests(reqList);
-      setActivityLogs(logList);
+
+      // Admin: load authorized emails
+      if (currentUser.role === 'ADMIN' || currentUser.role === 'TEACHER') {
+        const authList = await apiService.getAuthorizedEmails();
+        setAuthorizedEmails(authList);
+      }
+
+      // Load activity logs for admins/teachers
+      if (currentUser.role !== 'STUDENT') {
+        const logs = await apiService.getActivityLogs();
+        setActivityLogs(logs);
+      }
 
       const targetProjectId = activeProjectId || (projList.length > 0 ? projList[0].id : '');
       if (targetProjectId) {
-        const [docs, contribs, ai] = await Promise.all([
+        const [docs, contribs] = await Promise.all([
           apiService.getProjectDocuments(targetProjectId),
           apiService.getStudentContributions(targetProjectId),
-          apiService.getProjectAIAnalysis(targetProjectId)
         ]);
         setProjectDocuments(docs);
         setContributions(contribs);
-        setAiAnalysis(ai);
       } else {
         setProjectDocuments([]);
         setContributions([]);
-        setAiAnalysis(undefined);
       }
     } catch (err) {
       console.error('Error refreshing data:', err);
@@ -406,7 +461,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const resetData = async () => {
     await apiService.resetAllData();
-    showToast('System Reset', 'All runtime business records purged. Ready for fresh test.', 'warning');
+    showToast('Cache Cleared', 'Local session cache has been cleared.', 'warning');
     await refreshData();
   };
 

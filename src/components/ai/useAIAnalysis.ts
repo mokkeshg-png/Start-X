@@ -2,15 +2,16 @@
  * useAIAnalysis hook
  * Generic hook for any AI analysis module.
  * Handles loading, error, cache, and refresh state.
+ *
+ * IMPORTANT: autoRun defaults to FALSE. Panels must explicitly opt in.
+ * This prevents Edge Function calls on every page load.
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { aiAnalysisService, AIAnalysisRequest, AnalysisType } from '../../services/aiAnalysisService';
 
 export interface UseAIAnalysisOptions {
-  /** Automatically run analysis on mount */
+  /** Automatically run analysis on mount — defaults to FALSE */
   autoRun?: boolean;
-  /** Skip cache and always call the Edge Function */
-  forceRefresh?: boolean;
 }
 
 export interface UseAIAnalysisReturn<T = Record<string, unknown>> {
@@ -34,55 +35,68 @@ export function useAIAnalysis<T = Record<string, unknown>>(
   const [cached, setCached] = useState(false);
   const [analyzedAt, setAnalyzedAt] = useState<string | null>(null);
 
-  const run = useCallback(
-    async (forceRefresh = false) => {
-      if (!request) return;
+  // Track whether we've done the initial auto-run so we never do it twice
+  const autoRanRef = useRef(false);
 
-      setIsLoading(true);
-      setError(null);
+  const run = useCallback(async (forceRefresh = false) => {
+    if (!request) return;
+    // Guard: don't start a second call while one is in progress
+    if (isLoading) return;
 
-      try {
-        // 1. Check browser-side cache first (unless forceRefresh)
-        if (!forceRefresh) {
-          const cachedRow = await aiAnalysisService.getCachedAnalysis(
-            request.analysisType as AnalysisType,
-            {
-              teamId: request.teamId,
-              studentId: request.studentId,
-              discussionId: request.discussionId,
-              documentId: request.documentId,
-              contributionId: request.contributionId,
-            }
-          );
+    setIsLoading(true);
+    setError(null);
 
-          if (cachedRow) {
-            setResult(cachedRow.result_json as T);
-            setCached(true);
-            setAnalyzedAt(cachedRow.created_at);
-            setIsLoading(false);
-            return;
+    try {
+      // 1. Check DB cache first (unless forceRefresh)
+      if (!forceRefresh) {
+        const cachedRow = await aiAnalysisService.getCachedAnalysis(
+          request.analysisType as AnalysisType,
+          {
+            teamId: request.teamId,
+            studentId: request.studentId,
+            discussionId: request.discussionId,
+            documentId: request.documentId,
+            contributionId: request.contributionId,
           }
+        );
+
+        if (cachedRow) {
+          setResult(cachedRow.result_json as T);
+          setCached(true);
+          setAnalyzedAt(cachedRow.created_at);
+          setIsLoading(false);
+          return;
         }
-
-        // 2. Call Edge Function
-        const response = await aiAnalysisService.runAnalysis(request);
-        setResult(response.data.result_json as T);
-        setCached(response.cached ?? false);
-        setAnalyzedAt(response.data.created_at ?? new Date().toISOString());
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error(String(err)));
-      } finally {
-        setIsLoading(false);
       }
-    },
-    [JSON.stringify(request)] // stable dep
-  );
 
-  useEffect(() => {
-    if (autoRun && request) {
-      run(false);
+      // 2. Call Edge Function
+      const response = await aiAnalysisService.runAnalysis(request);
+      setResult(response.data.result_json as T);
+      setCached(response.cached ?? false);
+      setAnalyzedAt(response.data.created_at ?? new Date().toISOString());
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
     }
-  }, [autoRun, JSON.stringify(request)]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Only recreate when the meaningful request fields change
+    request?.analysisType,
+    request?.teamId,
+    request?.studentId,
+    request?.discussionId,
+    request?.documentId,
+    request?.contributionId,
+  ]);
+
+  // Auto-run once on mount — only if explicitly requested AND we have data
+  // Use a ref so it never re-fires on re-renders
+  if (autoRun && request && !autoRanRef.current && !isLoading && !result && !error) {
+    autoRanRef.current = true;
+    // Defer to next tick so component finishes mounting first
+    Promise.resolve().then(() => run(false));
+  }
 
   return { result, isLoading, error, cached, analyzedAt, run };
 }

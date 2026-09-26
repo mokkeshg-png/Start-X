@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -32,6 +32,7 @@ import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
 import { AIInsightsPanel } from '../components/AIInsightsPanel';
 import { clientStorage } from '../storage/clientStorage';
+import { supabase } from '../lib/supabase';
 
 interface CoordinatorDashboardPageProps {
   defaultTab?: 'STUDENT' | 'TEACHER';
@@ -64,6 +65,22 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
   const [isSingleModalOpen, setIsSingleModalOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Resolve the students.student_id for AI skill analysis (students only)
+  const [supabaseStudentId, setSupabaseStudentId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (currentUser?.role === 'STUDENT') {
+      supabase
+        .from('students')
+        .select('student_id')
+        .eq('user_id', currentUser.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.student_id) setSupabaseStudentId(data.student_id);
+        });
+    }
+  }, [currentUser?.id]);
 
   // Compute registered users stats
   const registeredUsers = clientStorage.getUsers();
@@ -516,11 +533,15 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
           )}
         </Card>
 
-        {/* AI INSIGHTS */}
-        <AIInsightsPanel 
-          title="Global Coordinator Intelligence"
-          analysisType="team_formation"
-        />
+        {/* AI INSIGHTS — only shown when a project exists and teamId is available */}
+        {projects.length > 0 && (
+          <AIInsightsPanel
+            title="AI Project Intelligence"
+            analysisType="collective_insight"
+            teamId={projects[0]?.id}
+            manualOnly={true}
+          />
+        )}
       </div>
     );
   }
@@ -685,12 +706,15 @@ export const CoordinatorDashboardPage: React.FC<CoordinatorDashboardPageProps> =
         )}
       </Card>
 
-      {/* AI INSIGHTS */}
-      <AIInsightsPanel 
-        title="My Personalized AI Insights"
-        analysisType="skill_analysis"
-        studentId={currentUser.id}
-      />
+      {/* AI INSIGHTS — students only, manual trigger */}
+      {currentUser.role === 'STUDENT' && supabaseStudentId && (
+        <AIInsightsPanel
+          title="My Personalized AI Insights"
+          analysisType="skill_analysis"
+          studentId={supabaseStudentId}
+          manualOnly={true}
+        />
+      )}
     </div>
   );
 };

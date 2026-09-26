@@ -63,13 +63,26 @@ class ClientStorage {
     this.setStorage(KEYS.BRANDING, config);
   }
 
-  // Users — registered users (starts empty, created through registration)
+  // Users — registered users stored in browser (cache of backend data)
   getUsers(): User[] {
     return this.getStorage<User[]>(KEYS.USERS, []);
   }
 
   saveUsers(users: User[]): void {
     this.setStorage(KEYS.USERS, users);
+  }
+
+  upsertUser(user: User): void {
+    const users = this.getUsers();
+    const idx = users.findIndex(
+      (u) => (user.id && u.id === user.id) || (user.email && u.email.toLowerCase() === user.email.toLowerCase())
+    );
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...user };
+    } else {
+      users.push(user);
+    }
+    this.saveUsers(users);
   }
 
   // Current logged-in user
@@ -79,6 +92,9 @@ class ClientStorage {
 
   saveCurrentUser(user: User | null): void {
     this.setStorage(KEYS.CURRENT_USER, user);
+    if (user) {
+      this.upsertUser(user);
+    }
   }
 
   // Authorized Emails — Admin adds these

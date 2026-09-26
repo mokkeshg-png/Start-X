@@ -64,7 +64,7 @@ export function ProjectAIInsightsDashboard({ teamId, studentId, isStaff, discuss
             title="Collective Project Summary"
             analysisType="collective_insight"
             teamId={teamId}
-            manualOnly={false}
+            manualOnly={true}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -72,7 +72,7 @@ export function ProjectAIInsightsDashboard({ teamId, studentId, isStaff, discuss
               title="Progress Analysis"
               analysisType="progress_analysis"
               teamId={teamId}
-              manualOnly={false}
+              manualOnly={true}
             />
             <AIInsightsPanel
               title="Knowledge Exchange"

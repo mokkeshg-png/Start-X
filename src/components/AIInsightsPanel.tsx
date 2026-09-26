@@ -1,7 +1,9 @@
 /**
  * AIInsightsPanel — generic AI analysis card.
  * Used in team and student dashboards.
- * Renders the result_json from any analysis type in a structured way.
+ *
+ * DEFAULTS TO MANUAL — never auto-fires unless autoRun={true} is explicitly set.
+ * Never renders if required IDs are missing for the selected analysisType.
  */
 import React from 'react';
 import { Brain, RefreshCw } from 'lucide-react';
@@ -11,13 +13,27 @@ import { Spinner } from './common/Spinner';
 import { AIErrorBox } from './ai/AIErrorBox';
 import { AIStatusBadge } from './ai/AIStatusBadge';
 import { useAIAnalysis } from './ai/useAIAnalysis';
-import type { AIAnalysisRequest } from '../services/aiAnalysisService';
+import type { AIAnalysisRequest, AnalysisType } from '../services/aiAnalysisService';
 
 interface AIInsightsPanelProps extends AIAnalysisRequest {
   title: string;
-  /** If true, shows the Analyze button only — does not auto-run */
+  /** Default true — set to false only when you explicitly want auto-run on mount */
   manualOnly?: boolean;
 }
+
+// Which IDs are required for each analysis type
+const REQUIRED_IDS: Partial<Record<AnalysisType, (keyof AIAnalysisRequest)[]>> = {
+  discussion_analysis:         ['discussionId'],
+  contribution_analysis:       ['teamId', 'studentId'],
+  document_intelligence:       ['documentId'],
+  progress_analysis:           ['teamId'],
+  collective_insight:          ['teamId'],
+  collaboration_gap:           ['teamId'],
+  collaboration_recommendation: ['teamId'],
+  skill_analysis:              ['studentId'],
+  team_formation:              ['teamId'],
+  knowledge_exchange:          ['teamId'],
+};
 
 // Keys to hide from the generic renderer (shown separately or internal)
 const SKIP_KEYS = new Set([
@@ -26,13 +42,32 @@ const SKIP_KEYS = new Set([
 
 export function AIInsightsPanel({
   title,
-  manualOnly = false,
+  manualOnly = true,
   ...request
 }: AIInsightsPanelProps) {
+  // Guard: don't render or call if required IDs are missing
+  const required = REQUIRED_IDS[request.analysisType as AnalysisType] ?? [];
+  const missingIds = required.filter((k) => !request[k]);
+
   const { result, isLoading, error, cached, analyzedAt, run } = useAIAnalysis(
-    request as AIAnalysisRequest,
-    { autoRun: !manualOnly }
+    missingIds.length === 0 ? (request as AIAnalysisRequest) : null,
+    { autoRun: !manualOnly && missingIds.length === 0 }
   );
+
+  // If required IDs missing, show a placeholder instead of hitting the Edge Function
+  if (missingIds.length > 0) {
+    return (
+      <Card className="p-6 bg-gradient-to-br from-slate-900 to-slate-950 border-indigo-900/30">
+        <div className="flex items-center gap-2 mb-3">
+          <Brain className="w-5 h-5 text-indigo-400" />
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider">{title}</h2>
+        </div>
+        <p className="text-xs text-slate-500">
+          Analysis unavailable — missing: {missingIds.join(', ')}
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950 border-indigo-900/30">
@@ -57,11 +92,7 @@ export function AIInsightsPanel({
           disabled={isLoading}
           icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
         >
-          {isLoading
-            ? 'Analysing…'
-            : result
-            ? 'Refresh'
-            : 'Analyse'}
+          {isLoading ? 'Analysing…' : result ? 'Refresh' : 'Analyse'}
         </Button>
       </div>
 
@@ -81,21 +112,21 @@ export function AIInsightsPanel({
         {!error && !isLoading && !result && (
           <div className="py-8 text-center">
             <p className="text-xs text-slate-500">
-              Click <span className="text-indigo-400 font-semibold">Analyse</span> to run AI analysis on this data.
+              Click <span className="text-indigo-400 font-semibold">Analyse</span> to run AI analysis.
             </p>
           </div>
         )}
 
         {result && !error && (
           <div className="space-y-4">
-            {/* Summary card */}
+            {/* Summary */}
             {(result as any).summary && (
               <div className="p-4 bg-indigo-950/20 rounded-xl border border-indigo-500/20">
                 <p className="text-sm text-indigo-100 leading-relaxed">{(result as any).summary}</p>
               </div>
             )}
 
-            {/* Confidence */}
+            {/* Confidence bar */}
             {typeof (result as any).confidence === 'number' && (
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-slate-500 uppercase tracking-wider">AI Confidence</span>
@@ -117,13 +148,14 @@ export function AIInsightsPanel({
                 if (SKIP_KEYS.has(key)) return null;
                 if (value === null || value === undefined) return null;
                 if (Array.isArray(value) && value.length === 0) return null;
-                if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value as object).length === 0) return null;
+                if (
+                  typeof value === 'object' &&
+                  !Array.isArray(value) &&
+                  Object.keys(value as object).length === 0
+                ) return null;
 
                 return (
-                  <div
-                    key={key}
-                    className="p-3 bg-slate-900/60 rounded-xl border border-slate-800"
-                  >
+                  <div key={key} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
                     <h3 className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
                       {key.replace(/_/g, ' ')}
                     </h3>
@@ -133,7 +165,6 @@ export function AIInsightsPanel({
               })}
             </div>
 
-            {/* Timestamp */}
             {analyzedAt && (
               <p className="text-[10px] text-slate-600 text-right font-mono">
                 Analysed {new Date(analyzedAt).toLocaleString()}
@@ -142,7 +173,7 @@ export function AIInsightsPanel({
           </div>
         )}
 
-        {/* Loading overlay when refreshing existing result */}
+        {/* Refresh overlay */}
         {isLoading && result && (
           <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center rounded-xl z-20">
             <Spinner className="w-6 h-6 text-indigo-500" />
@@ -154,9 +185,8 @@ export function AIInsightsPanel({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Value renderer — handles arrays, objects, and primitives
+// Value renderer
 // ─────────────────────────────────────────────────────────────────────────────
-
 function AIValueRenderer({ value }: { value: unknown }) {
   if (Array.isArray(value)) {
     return (
@@ -192,18 +222,12 @@ function AIValueRenderer({ value }: { value: unknown }) {
 }
 
 function formatObjectItem(obj: Record<string, unknown>): string {
-  // For action items, decisions, topics — try to extract the most useful field
   const preferredKeys = [
     'topic_name', 'decision_text', 'description', 'recommendation',
     'title', 'label', 'name', 'action', 'text',
   ];
-
   for (const key of preferredKeys) {
     if (obj[key]) return String(obj[key]);
   }
-
-  return Object.entries(obj)
-    .slice(0, 3)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(' | ');
+  return Object.entries(obj).slice(0, 3).map(([k, v]) => `${k}: ${v}`).join(' | ');
 }
