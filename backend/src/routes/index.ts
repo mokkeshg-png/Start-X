@@ -3,6 +3,7 @@ import { Router } from "express";
 import healthRoutes from "./health.routes";
 import systemRoutes from "./system.routes";
 import authRoutes from "./auth.routes";
+import adminRoutes from "./admin.routes";
 import usersRoutes from "./users.routes";
 import studentsRoutes from "./students.routes";
 import staffRoutes from "./staff.routes";
@@ -28,7 +29,10 @@ router.use("/system", systemRoutes);
 // Authentication (real implementation)
 router.use("/auth", authRoutes);
 
-// Module routes (501 Not Implemented until built out)
+// Admin — authorized email management (real implementation)
+router.use("/admin", adminRoutes);
+
+// Module routes (Supabase-direct on frontend; these mirror the data for server-side use)
 router.use("/users", usersRoutes);
 router.use("/students", studentsRoutes);
 router.use("/staff", staffRoutes);

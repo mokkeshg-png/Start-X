@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { supabaseClient, supabaseAdmin } from "../config/supabase";
-import { AuthUser, UserRole } from "../types";
+import { AuthUser } from "../types";
 import { AppError } from "../utils";
 
 /**
@@ -53,7 +53,7 @@ export async function requireAuth(
     const user: AuthUser = {
       id: data.user.id,
       email: data.user.email ?? "",
-      role: (data.user.app_metadata?.role as UserRole) ?? undefined,
+      role: (data.user.app_metadata?.role as string) ?? undefined,
       fullName: (data.user.user_metadata?.full_name as string) ?? null,
       emailConfirmedAt: data.user.email_confirmed_at ?? null,
       createdAt: data.user.created_at,
@@ -81,14 +81,17 @@ export async function requireAuth(
  *   router.get("/admin", requireAuth, requireRole(UserRole.SUPER_ADMIN), handler);
  *   router.get("/staff", requireAuth, requireRole(UserRole.STAFF, UserRole.SUPER_ADMIN), handler);
  */
-export function requireRole(...roles: UserRole[]) {
+export function requireRole(...roles: string[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
       next(AppError.unauthorized("Authentication required"));
       return;
     }
 
-    if (!req.user.role || !roles.includes(req.user.role)) {
+    const userRole = String(req.user.role || "").toLowerCase();
+    const normalizedRoles = roles.map((r) => r.toLowerCase());
+
+    if (!userRole || !normalizedRoles.includes(userRole)) {
       next(
         AppError.forbidden(
           `Access denied. Required role(s): ${roles.join(", ")}`

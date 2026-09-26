@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodSchema, ZodError } from "zod";
-import { sendError } from "./response";
 
 /**
  * Creates Express middleware that validates the request body against a Zod schema.
@@ -88,4 +87,4 @@ export function validateParams(schema: ZodSchema) {
 }
 
 // Re-export for convenience
-export { sendSuccess, sendError } from "./response";
+export { sendSuccess } from "./response";

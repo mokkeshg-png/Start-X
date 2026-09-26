@@ -17,7 +17,6 @@ import { Badge } from '../components/common/Badge';
 import { EmptyState } from '../components/common/EmptyState';
 import { Modal } from '../components/common/Modal';
 import { apiService } from '../services/apiService';
-import { clientStorage } from '../storage/clientStorage';
 import { User } from '../types';
 
 export const FindTeammatesPage: React.FC = () => {
@@ -54,35 +53,16 @@ export const FindTeammatesPage: React.FC = () => {
   const loadStudents = async () => {
     setIsSearching(true);
     try {
-      const allStudents = clientStorage
-        .getUsers()
-        .filter((u) => u.role === 'STUDENT' && u.id !== currentUser.id);
-
-      const filtered = allStudents.filter((s) => {
-        if (searchQuery) {
-          const q = searchQuery.toLowerCase();
-          const match =
-            s.name.toLowerCase().includes(q) ||
-            s.email.toLowerCase().includes(q) ||
-            (s.studentId && s.studentId.toLowerCase().includes(q)) ||
-            (s.skills || []).some((sk) => sk.toLowerCase().includes(q));
-          if (!match) return false;
-        }
-
-        if (selectedDept !== 'All Departments' && s.department !== selectedDept) {
-          return false;
-        }
-
-        if (selectedSkills.length > 0) {
-          const sSkills = (s.skills || []).map((sk) => sk.toLowerCase());
-          const hasSkill = selectedSkills.some((sk) => sSkills.includes(sk.toLowerCase()));
-          if (!hasSkill) return false;
-        }
-
-        return true;
+      // Use real Supabase search — filters by name, email, studentId, skills, department
+      const results = await apiService.searchStudents({
+        query: searchQuery || undefined,
+        department: selectedDept !== 'All Departments' ? selectedDept : undefined,
+        skills: selectedSkills.length > 0 ? selectedSkills : undefined,
       });
-
-      setRegisteredStudents(filtered);
+      // Exclude current user
+      setRegisteredStudents(results.filter((s) => s.id !== currentUser.id));
+    } catch (err) {
+      console.warn('searchStudents error:', err);
     } finally {
       setIsSearching(false);
     }

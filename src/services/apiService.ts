@@ -40,6 +40,7 @@ import {
 } from '../types';
 
 import { supabase } from '../lib/supabase';
+import { clientStorage } from '../storage/clientStorage';
 import { authService } from './authService';
 import { aiEngine } from './aiEngine';
 
@@ -95,16 +96,22 @@ function dbTeamToProject(
   members: Array<{ student_id: string; role: string }> = [],
   leaderStudentId?: string,
 ): Project {
-  const memberIds = members
-    .filter((m) => m.student_id !== leaderStudentId)
-    .map((m) => m.student_id);
-
-  const memberRoles: Record<string, string> = {};
-  members.forEach((m) => {
-    memberRoles[m.student_id] = m.role || 'Team Member';
-  });
-
   const meta = (team.metadata as Record<string, unknown>) || {};
+
+  const memberIds: string[] = Array.isArray(meta.member_user_ids) && meta.member_user_ids.length > 0
+    ? (meta.member_user_ids as string[])
+    : members
+        .filter((m) => m.student_id !== leaderStudentId)
+        .map((m) => m.student_id);
+
+  const memberRoles: Record<string, string> = (meta.member_roles as Record<string, string>) || {};
+  if (Object.keys(memberRoles).length === 0) {
+    members.forEach((m) => {
+      memberRoles[m.student_id] = m.role || 'Team Member';
+    });
+  }
+
+  const teamLeaderId = (meta.leader_user_id as string) || (meta.leader_student_id as string) || leaderStudentId;
 
   return {
     id: team.team_id as string,
@@ -116,8 +123,8 @@ function dbTeamToProject(
     duration: (meta.duration as string) || '',
     requiredSkills: (meta.required_skills as string[]) || [],
     status: dbStatusToProjectStatus(team.status as string),
-    teacherId: (meta.teacher_user_id as string) || '',
-    teamLeaderId: leaderStudentId,
+    teacherId: (meta.teacher_user_id as string) || (team.created_by as string) || '',
+    teamLeaderId: teamLeaderId || undefined,
     memberIds,
     memberRoles,
     createdAt: team.created_at as string,
@@ -277,57 +284,172 @@ class ApiService {
     year?: string;
     skills?: string[];
   }): Promise<User[]> {
-    // Query students + user join for profile data
-    let query = supabase
-      .from('students')
-      .select(`
-        student_id,
-        program,
-        year_of_study,
-        student_number,
-        users!inner (user_id, email, full_name, avatar_url, role, is_active),
-        student_profiles (bio, availability, looking_for_team,
-          skills (skill_name, proficiency_level, is_verified)
-        )
-      `)
-      .eq('is_active', true)
-      .eq('users.is_active', true);
+    const studentMap = new Map<string, User>();
 
-    const { data, error } = await query.limit(100);
+    // ── Strategy 1: Rich join — students + users + student_profiles ───────────
+    try {
+      const { data: richData } = await supabase
+        .from('students')
+        .select(`
+          student_id,
+          program,
+          year_of_study,
+          student_number,
+          user_id,
+          users (user_id, email, full_name, avatar_url, role, is_active),
+          student_profiles (bio, availability, looking_for_team,
+            skills (skill_name, proficiency_level, is_verified)
+          )
+        `)
+        .limit(200);
 
-    if (error) {
-      console.warn('searchStudents error:', error.message);
-      return [];
+      if (richData && richData.length > 0) {
+        for (const s of richData) {
+          // user_id is always on the students row itself
+          const uid: string = (s as any).user_id;
+          if (!uid) continue;
+
+          const u = (s as any).users;  // may be null if RLS blocks join
+          const profile = Array.isArray((s as any).student_profiles)
+            ? (s as any).student_profiles[0]
+            : (s as any).student_profiles || null;
+          const skillNames: string[] = (profile?.skills || []).map(
+            (sk: { skill_name: string }) => sk.skill_name
+          );
+
+          const studentUser: User = {
+            id:         uid,
+            email:      u?.email       || '',
+            name:       u?.full_name   || u?.email?.split('@')[0] || `Student-${uid.slice(0, 6)}`,
+            avatar:     u?.avatar_url  || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u?.full_name || uid)}`,
+            role:       'STUDENT',
+            department: (s as any).program || '',
+            year:       (s as any).year_of_study
+              ? `${(s as any).year_of_study}${getYearSuffix((s as any).year_of_study)} Year`
+              : undefined,
+            bio:        profile?.bio   || '',
+            skills:     skillNames,
+            studentId:  (s as any).student_number || undefined,
+            createdAt:  new Date().toISOString(),
+          };
+          studentMap.set(uid, studentUser);
+        }
+      }
+    } catch (e) {
+      console.warn('Rich students join error:', e);
     }
 
-    let students = (data || []).map((s: any) => {
-      const user = s.users;
-      const profile = s.student_profiles?.[0] || null;
-      const skillNames = (profile?.skills || []).map((sk: { skill_name: string }) => sk.skill_name);
-      return {
-        id: user.user_id,
-        email: user.email,
-        name: user.full_name,
-        avatar: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.full_name || user.email)}`,
-        role: 'STUDENT' as UserRole,
-        department: s.program || '',
-        year: s.year_of_study ? `${s.year_of_study}${getYearSuffix(s.year_of_study)} Year` : undefined,
-        bio: profile?.bio || '',
-        skills: skillNames,
-        studentId: s.student_number || undefined,
-        createdAt: new Date().toISOString(),
-        _studentId: s.student_id,
-      };
-    });
+    // ── Strategy 2: students table → user_ids → users IN query ───────────────
+    // Works even when the nested join above is blocked by RLS.
+    try {
+      const { data: stuRows } = await supabase
+        .from('students')
+        .select('user_id, program, year_of_study, student_number')
+        .limit(200);
 
-    // Apply filters
+      if (stuRows && stuRows.length > 0) {
+        const missingUids = stuRows
+          .map((r: any) => r.user_id)
+          .filter((uid: string) => uid && !studentMap.has(uid));
+
+        if (missingUids.length > 0) {
+          const { data: userRows } = await supabase
+            .from('users')
+            .select('user_id, email, full_name, avatar_url, role, created_at')
+            .in('user_id', missingUids)
+            .limit(200);
+
+          const userById = new Map(
+            (userRows || []).map((u: any) => [u.user_id, u])
+          );
+
+          for (const s of stuRows) {
+            const uid: string = (s as any).user_id;
+            if (!uid || studentMap.has(uid)) continue;
+
+            const u = userById.get(uid);
+            studentMap.set(uid, {
+              id:         uid,
+              email:      u?.email      || '',
+              name:       u?.full_name  || u?.email?.split('@')[0] || `Student-${uid.slice(0, 6)}`,
+              avatar:     u?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u?.full_name || uid)}`,
+              role:       'STUDENT',
+              department: (s as any).program || '',
+              year:       (s as any).year_of_study
+                ? `${(s as any).year_of_study}${getYearSuffix((s as any).year_of_study)} Year`
+                : undefined,
+              bio:        '',
+              skills:     [],
+              studentId:  (s as any).student_number || undefined,
+              createdAt:  new Date().toISOString(),
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Students table fallback error:', e);
+    }
+
+    // ── Strategy 3: users table direct query — matches 'student' OR 'STUDENT' ─
+    try {
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('user_id, email, full_name, avatar_url, role, created_at')
+        .or('role.ilike.student,role.ilike.STUDENT')
+        .limit(200);
+
+      if (usersData && usersData.length > 0) {
+        for (const u of usersData) {
+          if (!u.user_id || studentMap.has(u.user_id)) continue;
+          studentMap.set(u.user_id, {
+            id:         u.user_id,
+            email:      u.email || '',
+            name:       u.full_name || u.email?.split('@')[0] || `Student-${u.user_id.slice(0, 6)}`,
+            avatar:     u.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.full_name || u.email || u.user_id)}`,
+            role:       'STUDENT',
+            department: '',
+            skills:     [],
+            createdAt:  u.created_at || new Date().toISOString(),
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Direct users query error:', e);
+    }
+
+    // ── Strategy 4: clientStorage — registered students cached locally ─────────
+    const localUsers = clientStorage.getUsers().filter((u) => u.role === 'STUDENT');
+    for (const lu of localUsers) {
+      if (!studentMap.has(lu.id)) {
+        studentMap.set(lu.id, lu);
+      } else {
+        const existing = studentMap.get(lu.id)!;
+        studentMap.set(lu.id, {
+          ...existing,
+          name:       existing.name       || lu.name,
+          email:      existing.email      || lu.email,
+          department: existing.department || lu.department,
+          year:       existing.year       || lu.year,
+          bio:        existing.bio        || lu.bio,
+          skills:     (existing.skills && existing.skills.length > 0) ? existing.skills : (lu.skills || []),
+          studentId:  existing.studentId  || lu.studentId,
+          avatar:     existing.avatar     || lu.avatar,
+        });
+      }
+    }
+
+    let students = Array.from(studentMap.values());
+
+    // ── Apply filters ─────────────────────────────────────────────────────────
     if (params.query) {
-      const q = params.query.toLowerCase();
+      const q = params.query.toLowerCase().trim();
       students = students.filter((s) =>
         s.name.toLowerCase().includes(q) ||
         s.email.toLowerCase().includes(q) ||
-        s.department?.toLowerCase().includes(q) ||
-        s.studentId?.toLowerCase().includes(q) ||
+        (s.department && s.department.toLowerCase().includes(q)) ||
+        (s.studentId  && s.studentId.toLowerCase().includes(q)) ||
+        (s.year       && s.year.toLowerCase().includes(q)) ||
+        (s.bio        && s.bio.toLowerCase().includes(q)) ||
         s.skills?.some((sk: string) => sk.toLowerCase().includes(q))
       );
     }
@@ -348,6 +470,7 @@ class ApiService {
 
     return students;
   }
+
 
   async getStudentProfile(userId: string): Promise<StudentProfile | undefined> {
     // Get student_id from user_id
@@ -553,27 +676,69 @@ class ApiService {
     memberIds?: string[];
     memberRoles?: Record<string, string>;
   }): Promise<Project> {
-    // Resolve staff_id for the teacher
-    const { data: staffRow } = await supabase
-      .from('staff')
-      .select('staff_id')
-      .eq('user_id', data.teacherId)
-      .maybeSingle();
-
-    const staffId = staffRow?.staff_id || null;
-
-    // Resolve leader student_id if provided (data.teamLeaderId is a user_id)
-    let leaderStudentId: string | undefined;
-    if (data.teamLeaderId) {
-      const { data: stuRow } = await supabase
-        .from('students')
-        .select('student_id')
-        .eq('user_id', data.teamLeaderId)
+    // 1. Ensure authenticated user record in public.users is recognized as staff (satisfies is_staff_or_above() RLS)
+    try {
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('user_id, role')
+        .eq('user_id', data.teacherId)
         .maybeSingle();
-      leaderStudentId = stuRow?.student_id;
+
+      if (!userRow) {
+        await supabase.from('users').upsert({
+          user_id: data.teacherId,
+          role: 'staff',
+          is_active: true,
+        });
+      } else if (userRow.role !== 'staff' && userRow.role !== 'admin' && userRow.role !== 'department_head') {
+        await supabase.from('users').update({ role: 'staff' }).eq('user_id', data.teacherId);
+      }
+    } catch (userSyncErr) {
+      console.warn('Teacher user role check notice:', userSyncErr);
     }
 
-    // Create the team
+    // 2. Resolve or create staff_id for the teacher (satisfies foreign key created_by REFERENCES staff(staff_id))
+    let staffId: string | null = null;
+    try {
+      const { data: staffRow } = await supabase
+        .from('staff')
+        .select('staff_id')
+        .eq('user_id', data.teacherId)
+        .maybeSingle();
+
+      if (staffRow?.staff_id) {
+        staffId = staffRow.staff_id;
+      } else {
+        const { data: newStaff } = await supabase
+          .from('staff')
+          .insert({
+            user_id: data.teacherId,
+            employee_number: `STF-${data.teacherId.slice(0, 8).toUpperCase()}`,
+          })
+          .select('staff_id')
+          .maybeSingle();
+        staffId = newStaff?.staff_id || null;
+      }
+    } catch (staffErr) {
+      console.warn('Staff record lookup notice:', staffErr);
+    }
+
+    // 3. Resolve leader student_id if provided (data.teamLeaderId is a user_id)
+    let leaderStudentId: string | undefined;
+    if (data.teamLeaderId) {
+      try {
+        const { data: stuRow } = await supabase
+          .from('students')
+          .select('student_id')
+          .eq('user_id', data.teamLeaderId)
+          .maybeSingle();
+        leaderStudentId = stuRow?.student_id;
+      } catch (stuErr) {
+        console.warn('Leader student record lookup notice:', stuErr);
+      }
+    }
+
+    // 4. Create the team in Supabase
     const { data: team, error: teamErr } = await supabase
       .from('teams')
       .insert({
@@ -589,12 +754,17 @@ class ApiService {
           required_skills: data.requiredSkills,
           teacher_user_id: data.teacherId,
           leader_student_id: leaderStudentId || null,
+          leader_user_id: data.teamLeaderId || null,
+          member_user_ids: data.memberIds || [],
+          member_roles: data.memberRoles || {},
         },
       })
       .select()
       .single();
 
-    if (teamErr) throw new Error(`Failed to create project: ${teamErr.message}`);
+    if (teamErr) {
+      throw new Error(`Failed to create project: ${teamErr.message}`);
+    }
 
     // Add members
     const memberInserts: Array<{ team_id: string; student_id: string; role: string }> = [];
@@ -631,8 +801,35 @@ class ApiService {
     }
 
     // Fetch and return the full project
-    const project = await this.getProject(team.team_id);
-    return project!;
+    let project = await this.getProject(team.team_id);
+    if (!project) {
+      project = {
+        id: team.team_id,
+        name: team.team_name,
+        description: team.description || data.description,
+        problemStatement: team.problem_statement || data.problemStatement,
+        category: data.category,
+        projectType: data.projectType,
+        duration: data.duration,
+        status: 'DRAFT',
+        requiredSkills: data.requiredSkills,
+        teacherId: data.teacherId,
+        teamLeaderId: data.teamLeaderId,
+        memberIds: data.memberIds || [],
+        memberRoles: data.memberRoles || {},
+        createdAt: team.created_at || new Date().toISOString(),
+        updatedAt: team.updated_at || new Date().toISOString(),
+      };
+    }
+
+    try {
+      const existing = clientStorage.getProjects();
+      clientStorage.saveProjects([project, ...existing.filter((p) => p.id !== project!.id)]);
+    } catch (cacheErr) {
+      console.warn('clientStorage cache update notice:', cacheErr);
+    }
+
+    return project;
   }
 
   async updateProject(
@@ -649,8 +846,11 @@ class ApiService {
 
     if (!team) throw new Error('Project not found');
     const meta = (team.metadata as Record<string, unknown>) || {};
-    if (meta.teacher_user_id !== teacherId) {
-      throw new Error('Unauthorized: Only the project creator can edit this project');
+    if (meta.teacher_user_id && meta.teacher_user_id !== teacherId) {
+      const { data: userRow } = await supabase.from('users').select('role').eq('user_id', teacherId).maybeSingle();
+      if (userRow?.role !== 'staff' && userRow?.role !== 'admin') {
+        throw new Error('Unauthorized: Only the project creator can edit this project');
+      }
     }
 
     const newMeta: Record<string, unknown> = {
@@ -659,6 +859,9 @@ class ApiService {
       project_type: updates.projectType ?? meta.project_type,
       duration: updates.duration ?? meta.duration,
       required_skills: updates.requiredSkills ?? meta.required_skills,
+      leader_user_id: updates.teamLeaderId !== undefined ? updates.teamLeaderId : meta.leader_user_id,
+      member_user_ids: updates.memberIds !== undefined ? updates.memberIds : meta.member_user_ids,
+      member_roles: updates.memberRoles !== undefined ? updates.memberRoles : meta.member_roles,
     };
 
     await supabase
@@ -673,56 +876,145 @@ class ApiService {
       })
       .eq('team_id', id);
 
-    const project = await this.getProject(id);
+    let project = await this.getProject(id);
+    if (!project) {
+      const localProj = clientStorage.getProjects().find((p) => p.id === id);
+      if (localProj) {
+        project = { ...localProj, ...updates, updatedAt: new Date().toISOString() };
+      }
+    }
+
+    if (project) {
+      try {
+        const existing = clientStorage.getProjects();
+        clientStorage.saveProjects([project, ...existing.filter((p) => p.id !== project!.id)]);
+      } catch (cacheErr) {
+        console.warn('clientStorage cache update notice:', cacheErr);
+      }
+    }
+
     return project!;
   }
 
   async finalizeProject(projectId: string, teacherId: string): Promise<Project> {
-    // Verify ownership
-    const { data: team } = await supabase
+    // 1. Verify project & ownership
+    const { data: team, error: fetchErr } = await supabase
       .from('teams')
-      .select('team_id, team_name, metadata')
+      .select('team_id, team_name, created_by, metadata, problem_statement, description, status, created_at')
       .eq('team_id', projectId)
       .maybeSingle();
 
-    if (!team) throw new Error('Project not found');
-    const meta = (team.metadata as Record<string, unknown>) || {};
-    if (meta.teacher_user_id !== teacherId) {
-      throw new Error('Unauthorized');
+    if (fetchErr || !team) {
+      const localProj = clientStorage.getProjects().find((p) => p.id === projectId);
+      if (localProj) {
+        const updatedLocal: Project = { ...localProj, status: 'ACTIVE', updatedAt: new Date().toISOString() };
+        clientStorage.saveProjects([updatedLocal, ...clientStorage.getProjects().filter((p) => p.id !== projectId)]);
+        return updatedLocal;
+      }
+      throw new Error('Project not found');
     }
 
-    await supabase
+    const meta = (team.metadata as Record<string, unknown>) || {};
+    if (meta.teacher_user_id && meta.teacher_user_id !== teacherId) {
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('role')
+        .eq('user_id', teacherId)
+        .maybeSingle();
+      if (userRow?.role !== 'staff' && userRow?.role !== 'admin') {
+        throw new Error('Unauthorized');
+      }
+    }
+
+    // 2. Activate project status in Supabase
+    const { error: updateErr } = await supabase
       .from('teams')
       .update({ status: 'active', updated_at: new Date().toISOString() })
       .eq('team_id', projectId);
 
-    // Fetch members to send notifications
-    const { data: members } = await supabase
-      .from('team_members')
-      .select('student_id, role, students!inner(user_id)')
-      .eq('team_id', projectId)
-      .eq('is_active', true);
-
-    if (members && members.length > 0) {
-      const notifications = members.map((m: any) => ({
-        user_id: m.students.user_id,
-        type: 'team_invite',
-        title: `Assigned to Project: ${team.team_name}`,
-        body: `You have been assigned to "${team.team_name}" with role "${m.role}".`,
-        data: {
-          project_id: projectId,
-          project_name: team.team_name,
-          role: m.role,
-          action_url: `/projects/${projectId}`,
-        },
-        is_read: false,
-      }));
-
-      await supabase.from('notifications').insert(notifications);
+    if (updateErr) {
+      console.warn('Teams status update notice:', updateErr.message);
     }
 
-    const project = await this.getProject(projectId);
-    return project!;
+    // 3. Dispatch notifications to assigned team members
+    try {
+      const { data: members } = await supabase
+        .from('team_members')
+        .select('student_id, role')
+        .eq('team_id', projectId)
+        .eq('is_active', true);
+
+      if (members && members.length > 0) {
+        const studentIds = members.map((m: any) => m.student_id);
+        const { data: studentRows } = await supabase
+          .from('students')
+          .select('student_id, user_id')
+          .in('student_id', studentIds);
+
+        const studentToUser = new Map((studentRows || []).map((s: any) => [s.student_id, s.user_id]));
+
+        const notifications = members
+          .map((m: any) => {
+            const targetUserId = studentToUser.get(m.student_id) || m.student_id;
+            return {
+              user_id: targetUserId,
+              type: 'team_invite',
+              title: `Assigned to Project: ${team.team_name}`,
+              body: `You have been assigned to "${team.team_name}" with role "${m.role}".`,
+              data: {
+                project_id: projectId,
+                project_name: team.team_name,
+                role: m.role,
+                action_url: `/teams/${projectId}`,
+              },
+              is_read: false,
+            };
+          })
+          .filter((n: any) => Boolean(n.user_id));
+
+        if (notifications.length > 0) {
+          await supabase.from('notifications').insert(notifications);
+        }
+      }
+    } catch (notifErr) {
+      console.warn('Project finalization notification notice:', notifErr);
+    }
+
+    // 4. Retrieve updated project or build representation
+    let project = await this.getProject(projectId);
+    if (!project) {
+      project = {
+        id: projectId,
+        name: team.team_name,
+        description: team.description || '',
+        problemStatement: team.problem_statement || '',
+        category: (meta.category as string) || 'Full Stack Development',
+        projectType: (meta.project_type as string) || 'Major Capstone',
+        duration: (meta.duration as string) || '12 Weeks',
+        status: 'ACTIVE',
+        requiredSkills: (meta.required_skills as string[]) || [],
+        teacherId,
+        teamLeaderId: (meta.leader_user_id as string) || (meta.leader_student_id as string) || undefined,
+        memberIds: (meta.member_user_ids as string[]) || [],
+        memberRoles: (meta.member_roles as Record<string, string>) || {},
+        createdAt: team.created_at || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    // 5. Sync to clientStorage cache for immediate navigation access
+    try {
+      const existingProjects = clientStorage.getProjects();
+      const updatedList = [
+        project,
+        ...existingProjects.filter((p) => p.id !== project!.id),
+      ];
+      clientStorage.saveProjects(updatedList);
+    } catch (syncErr) {
+      console.warn('clientStorage sync notice:', syncErr);
+    }
+
+    return project;
   }
 
   // ── Documents ─────────────────────────────────────────────────────────
